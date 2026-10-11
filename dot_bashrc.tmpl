@@ -222,7 +222,10 @@ up() {
     echo "== tools: mise"
     local _before _after
     _before=$(_mise_snapshot)
-    mise install -q -y && mise upgrade -q -y && mise prune -q -y
+    # Without GITLAB_TOKEN / MISE_GITLAB_TOKEN: mise would send a token kept for
+    # another GitLab to gitlab.com too, which answers 401 even for a public release.
+    ( unset GITLAB_TOKEN MISE_GITLAB_TOKEN
+      mise install -q -y && mise upgrade -q -y && mise prune -q -y )
     _after=$(_mise_snapshot)
     _report_snapshot "$_before" "$_after"
   fi

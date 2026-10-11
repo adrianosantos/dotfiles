@@ -398,7 +398,13 @@ up() {
   while IFS= read -r _t; do [[ -n "$_t" ]] && _mise_skip+=(-x "$_t"); done \
     < <(mise ls --installed --json 2>/dev/null \
         | jq -r 'keys[]? | select(startswith("http:"))' 2>/dev/null)
-  mise install && mise upgrade "${_mise_skip[@]}" && mise prune
+  # mise sends GITLAB_TOKEN (or MISE_GITLAB_TOKEN) to every GitLab host it downloads
+  # from, gitlab.com included, and gitlab.com answers 401 to a token it did not issue,
+  # even for a public release: a token kept for another GitLab stops glab's upgrade.
+  # What mise fetches here is public, so the upgrade runs without them; a token mise
+  # needs for one host goes in ~/.config/mise/gitlab_tokens.toml, which is per host.
+  ( unset GITLAB_TOKEN MISE_GITLAB_TOKEN
+    mise install && mise upgrade "${_mise_skip[@]}" && mise prune )
   tools
   # A Mac that hosts Claude Code Remote Control from a launchd job runs the `claude`
   # binary as a long-lived process. `brew upgrade` above swaps
