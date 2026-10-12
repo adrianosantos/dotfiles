@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+# cask-update - update a pinned cask's app by hand, and say which apps are behind.
+#
+# The casks in run_pin-self-updating-casks.sh are pinned because they update
+# themselves, so `brew upgrade` skips them. An app's own updater runs only while
+# the app does, though, and one that has not run for a while falls behind. This
+# compares each app's own version with its cask's, and updates one after a yes.
+#
+#   cask-update --check [NAME...]   one line per app that is behind its cask, else
+#                                   nothing; every pinned cask when no NAME is given
+#   cask-update [-y] NAME...        show the versions, then after a yes (-y: no
+#                                   question) quit the app if it is running, unpin
+#                                   the cask, brew upgrade --cask --greedy it, pin
+#                                   it again whatever happens, and reopen the app
+#                                   if it was running
+#
+# The versions compared are the app's own (its Info.plist) and the cask's, never
+# the one brew recorded at install: an app that updated itself leaves that record
+# behind, so `brew outdated --greedy` also lists apps that are current. Run
+# `brew update` (or `up`) first, so the cask's version is the latest. macOS may
+# ask once to let the terminal modify apps (System Settings > Privacy & Security >
+# App Management), and the wireshark-app cask reinstalls two installer packages,
+# which asks for a password. `cask-update claude` refuses to run inside the Claude
+# desktop app: quitting the app would end the session it runs in.
+set -eu
+
+APPDIR="${CASK_UPDATE_APPDIR:-/Applications}"
+YES=""
+CHECK=""
+
+usage() { awk 'NR>1 && !/^#/{exit} NR>1{sub(/^# ?/,""); print}' "$0"; }
+die() { echo "cask-update: $*" >&2; exit 1; }
+
+# One line per cask, `token<TAB>version<TAB>app`: the version before any comma,
+# and the first app the cask installs ("" when it installs none).
+casks_info() {
+  brew info --cask --json=v2 "$@" 2>/dev/null | jq -r '.casks[] | [.token,
+    (.version | split(",")[0]),
+    ([.artifacts[] | objects | .app? // empty | .[]? | strings][0] // "")] | @tsv'
+}
+app_path() {  # where the app bundle is: the app folder, else ~/Applications
+  local d
+  for d in "$APPDIR" "$HOME/Applications"; do
+    if [ -d "$d/$1" ]; then printf '%s\n' "$d/$1"; return 0; fi
+  done
+  return 1
+}
+plist() {  # one key of the app's Info.plist, read from the file itself (no prefs cache)
+  plutil -extract "$2" raw -o - "$1/Contents/Info.plist" 2>/dev/null || true
+}
+behind() {  # is the app's version $1 older than the cask's $2?
+  [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n 1)" = "$2" ]
+}
+pinned() { brew list --cask --pinned 2>/dev/null | grep -qx "$1"; }
+
+check() {
+  local names=() tok want app path have out=""
+  if [ $# -gt 0 ]; then
+    names=("$@")
+  else
+    while IFS= read -r tok; do
+      if [ -n "$tok" ]; then names+=("$tok"); fi
+    done < <(brew list --cask --pinned 2>/dev/null || true)
+  fi
+  [ "${#names[@]}" -gt 0 ] || return 0
+  while IFS=$'\t' read -r tok want app; do
+    [ -n "$app" ] && [ "$want" != latest ] || continue
+    path=$(app_path "$app") || continue
+    have=$(plist "$path" CFBundleShortVersionString)
+    if [ -n "$have" ] && behind "$have" "$want"; then out="$out  $tok $have -> $want"$'\n'; fi
+  done < <(casks_info "${names[@]}")
+  [ -n "$out" ] || return 0
+  echo "Apps behind their cask, which brew upgrade skips because the cask is pinned:"
+  printf '%s' "$out"
+  echo "Update one at the Mac with: cask-update NAME (it quits and reopens the app)"
+}
+
+update_one() {  # token, cask version, app
+  local tok=$1 want=$2 app=$3 path have id bin answer i running="" was_pinned="" status=0
+  path=$(app_path "$app") || { echo "cask-update: $tok: its app, $app, is in neither $APPDIR nor ~/Applications" >&2; return 1; }
+  have=$(plist "$path" CFBundleShortVersionString)
+  if [ -n "$have" ] && [ "$want" != latest ] && ! behind "$have" "$want"; then
+    echo "$tok: ${app%.app} $have is current (the cask has $want)."
+    return 0
+  fi
+  if [ "$tok" = claude ] && { [ "${CLAUDE_CODE_ENTRYPOINT:-}" = claude-desktop ] || [ -n "${CLAUDE_CODE_DESKTOP_APP_VERSION:-}" ]; }; then
+    die "claude: this shell runs inside the Claude desktop app, and updating it quits the app. Run it in Terminal or Ghostty."
+  fi
+  echo "$tok: ${app%.app} ${have:-?} -> $want."
+  if [ "$tok" = claude ]; then
+    echo "Updating quits the app: every Code session stops, and Remote Control comes back for"
+    echo "a session when it gets a message."
+  fi
+  if [ -z "$YES" ]; then
+    printf 'Update now? [y/N] '
+    read -r answer || answer=""
+    case "$answer" in y | Y | yes) ;; *) echo "$tok: left at ${have:-?}."; return 0 ;; esac
+  fi
+
+  # Quit it only if it runs: asking an app that is not running to quit can start it.
+  bin="$path/Contents/MacOS/"
+  if pgrep -f "$bin" >/dev/null 2>&1; then
+    running=1
+    id=$(plist "$path" CFBundleIdentifier)
+    osascript -e "quit app id \"$id\"" >/dev/null 2>&1 || true
+    i=0
+    while pgrep -f "$bin" >/dev/null 2>&1 && [ "$i" -lt 30 ]; do sleep 1; i=$((i + 1)); done
+    if pgrep -f "$bin" >/dev/null 2>&1; then
+      die "$tok: ${app%.app} did not quit; quit it and run this again."
+    fi
+  fi
+
+  if pinned "$tok"; then
+    was_pinned=1
+    REPIN=$tok   # pinned again even if this run is cut short
+    trap 'brew pin --cask "$REPIN" >/dev/null 2>&1 || true' EXIT
+    brew unpin --cask "$tok" >/dev/null 2>&1 || true
+  fi
+  brew upgrade --cask --greedy "$tok" || status=$?
+  if [ -n "$was_pinned" ]; then
+    brew pin --cask "$tok" >/dev/null 2>&1 || true
+    trap - EXIT
+  fi
+  if [ -n "$running" ]; then open -a "$path" >/dev/null 2>&1 || true; fi
+  if [ "$status" -ne 0 ]; then
+    echo "cask-update: $tok: the upgrade failed (exit $status). If macOS blocked it, allow the" >&2
+    echo "terminal under System Settings > Privacy & Security > App Management and run this again." >&2
+    return "$status"
+  fi
+  echo "$tok: ${app%.app} is now $(plist "$path" CFBundleShortVersionString)."
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h | --help) usage; exit 0 ;;
+    --check) CHECK=1; shift ;;
+    -y | --yes) YES=1; shift ;;
+    --) shift; break ;;
+    -*) die "unknown option $1 (try --help)" ;;
+    *) break ;;
+  esac
+done
+command -v brew >/dev/null 2>&1 || die "brew is not installed here."
+
+if [ -n "$CHECK" ]; then
+  check "$@"
+  exit 0
+fi
+[ $# -gt 0 ] || { usage >&2; exit 2; }
+
+rc=0
+for name in "$@"; do
+  if ! brew list --cask "$name" >/dev/null 2>&1; then
+    echo "cask-update: $name is not an installed cask." >&2
+    rc=1
+    continue
+  fi
+  line=$(casks_info "$name")
+  tok=${line%%$'\t'*}; rest=${line#*$'\t'}; want=${rest%%$'\t'*}; app=${rest#*$'\t'}
+  if [ -z "$line" ] || [ -z "$want" ]; then
+    echo "cask-update: $name: brew knows no version for it; run brew update." >&2
+    rc=1
+    continue
+  fi
+  if [ -z "$app" ]; then
+    echo "cask-update: $name installs no app; brew upgrade --cask --greedy $name updates it." >&2
+    rc=1
+    continue
+  fi
+  update_one "$tok" "$want" "$app" || rc=$?
+done
+exit "$rc"

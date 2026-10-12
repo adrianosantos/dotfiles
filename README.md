@@ -108,7 +108,8 @@ so it cannot list something that is not actually installed.
 | `dot_config/kind/*.yaml.tmpl` | kind configs | Cluster presets: default, no-CNI, Calico (iptables/eBPF) |
 | `dot_default-python-packages` | mise | Default pip packages for every Python (on linux-minimal only with the `python` extra) |
 | `dot_local/bin/executable_tx` | `~/.local/bin/tx` | curl-only S3 file-transfer client (pairs with [s3tx](https://github.com/junior/s3tx)) |
-| `dot_local/bin/executable_claude-desktop-update` | `~/.local/bin/claude-desktop-update` | mac: updates the Claude desktop app by hand, after a yes, since its own updater is blocked; `--check`, which `up` runs, says when a version is out |
+| `dot_local/bin/executable_cask-update` | `~/.local/bin/cask-update` | mac: updates a pinned cask's app by hand, after a yes: quits it, unpins, upgrades, pins again, reopens it; `--check`, which `up` runs, names the apps behind their cask by the app's own version |
+| `dot_local/bin/executable_claude-desktop-update` | `~/.local/bin/claude-desktop-update` | mac: `cask-update claude` under the name it had, for the Claude desktop app, whose own updater is blocked |
 | `dot_config/claude-desktop/block-auto-updates.mobileconfig` | `~/.config/claude-desktop/` | mac: the configuration profile that blocks the Claude desktop app's own updater; installed once, by hand |
 | `dot_local/bin/executable_vaults` | `~/.local/bin/vaults` | one status line per Obsidian vault (changes, commits to push or pull, last commit) and `vaults pull` for all of them; POSIX sh, not on linux-minimal |
 | `private_dot_ssh/private_config` | `~/.ssh/config` | WSL-only: overlay include + keepalives for stateful-firewall networks |
@@ -124,7 +125,7 @@ so it cannot list something that is not actually installed.
 | `run_onchange_install-devin.sh.tmpl` | — | Devin CLI (WSL) |
 | `run_setup-docker-cli.sh.tmpl` | — | docker CLI against rootless Podman + self-updating `dhi`/`scout` plugins (WSL) |
 | `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac) |
-| `run_pin-self-updating-casks.sh.tmpl` | — | Pins casks that update themselves, so brew never fights their updater (mac) |
+| `run_pin-self-updating-casks.sh.tmpl` | — | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
 | `gen-tools.py` | `TOOLS.md` | Regenerates the tool inventory; `--check` fails if the file is stale |
 | `.chezmoi.toml.tmpl` | chezmoi config | Prompts once on init: the machine, and for linux-minimal a bigger filesystem and optional extras |
 

@@ -8,10 +8,13 @@
 # the terminal usually lacks. Result: "Upgrading <cask> has failed!" forever.
 #
 # Pinning tells brew to skip them; their own updaters keep them current (brew's own
-# `pin` help says as much for auto_updates casks). They're still declared in the
-# Brewfile, so a fresh machine still installs them — Brewfile has no pin syntax,
-# which is why this lives here. Edit PINNED to add/remove; unpin by hand with
-# `brew unpin --cask <name>` after removing it from the list.
+# `pin` help says as much for auto_updates casks). An updater runs only while its app
+# does, so one that has not run for a while falls behind: `up` names those, by the
+# app's own version (cask-update --check), and `cask-update NAME` updates one.
+# They're still declared in the Brewfile, so a fresh machine still installs them:
+# Brewfile has no pin syntax, which is why this lives here. Edit PINNED to
+# add/remove; unpin by hand with `brew unpin --cask <name>` after removing it from
+# the list.
 #
 # A plain run_ script, NOT run_onchange_, and that distinction is load-bearing: a
 # cask listed here may not be installed yet when this runs, because `up` applies

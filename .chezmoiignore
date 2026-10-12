@@ -68,3 +68,8 @@ ensure-ssh-include.sh
 .local/bin/claude-desktop-update
 .config/claude-desktop
 {{- end }}
+{{ if ne .machine "mac-personal" -}}
+# Homebrew casks exist only on the personal Macs, so cask-update has nothing to do
+# anywhere else.
+.local/bin/cask-update
+{{- end }}
