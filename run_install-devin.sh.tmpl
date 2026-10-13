@@ -37,18 +37,27 @@ done
 
 echo ">>> devin: installing the latest from cli.devin.ai ..."
 tmp="$(mktemp)" || exit 0
-trap 'rm -f "$tmp"' EXIT
+log="$(mktemp)" || exit 0
+trap 'rm -f "$tmp" "$log"' EXIT
 if ! curl -fsSL https://cli.devin.ai/install.sh -o "$tmp"; then
   echo ">>> devin: WARN the installer could not be downloaded; the next apply tries again"
   exit 0
 fi
-# stdin closed so the installer's trailing interactive `devin setup` can't block
-# chezmoi; the binary is installed before that step runs.
-bash "$tmp" </dev/null || true
-if [ -e "$bin" ]; then
-  echo ">>> devin: installed; run 'devin auth login' once to sign in"
+# The installer ends with an interactive `devin setup`, the sign-in, which opens
+# /dev/tty itself: a closed stdin does not stop it, and in a terminal `up` stopped at
+# a login prompt (2026-10-13). setsid runs the installer in a session of its own,
+# with no controlling terminal, so setup cannot prompt; it gives up after the binary
+# is in place. Its output goes to a log, shown only when the install failed.
+if command -v setsid >/dev/null 2>&1; then
+  setsid -w bash "$tmp" </dev/null >"$log" 2>&1 || true
 else
-  echo ">>> devin: WARN the install did not leave $bin; the next apply tries again"
+  bash "$tmp" </dev/null >"$log" 2>&1 || true
+fi
+if [ -e "$bin" ]; then
+  echo ">>> devin: installed $("$bin" --version 2>/dev/null | head -1); run 'devin auth login' once to sign in"
+else
+  echo ">>> devin: WARN the install did not leave $bin; the next apply tries again. Its output:"
+  sed 's/^/    /' "$log"
 fi
 exit 0
 {{- end }}
