@@ -1,0 +1,77 @@
+{{- /* wsl-work always; linux-minimal only when the "extras" answer lists claude. */ -}}
+{{- $want := eq .machine "wsl-work" -}}
+{{- if eq .machine "linux-minimal" -}}
+{{-   if hasKey . "extras" }}{{ if has "claude" (regexSplit "\\s*,\\s*" (trim .extras) -1) }}{{ $want = true }}{{ end }}{{ end -}}
+{{- end -}}
+{{- $big := "" -}}{{- if hasKey . "bigdisk" }}{{ $big = .bigdisk }}{{ end -}}
+{{- if $want -}}
+#!/usr/bin/env bash
+# Claude Code CLI: native installer (self-updating; no npm, per preference).
+# tools-category: AI / agents
+# tools-installs: claude-code
+#
+# The corp proxy gates claude.ai behind an "acknowledge the internal AI usage
+# documentation" page. Until that is acknowledged (in the Windows browser), the
+# install URL returns that HTML page instead of the script, so this NEVER pipes
+# the download into bash: it fetches to a file, verifies it is actually a shell
+# script, and only then runs it. On the HTML page it explains what to do instead.
+#
+# Bootstrap only: silent once `claude` exists; after that the native install keeps
+# ITSELF updated (launcher ~/.local/bin/claude -> ~/.local/share/claude). A plain
+# run_ script, so a failed attempt is simply tried again at the next apply, and it
+# only warns: a failing run_ script would abort the whole apply.
+#
+# The installer runs the binary's `install` step, which draws an interactive screen
+# when it finds a terminal; setsid gives it none, as for the Devin CLI, and its output
+# goes to a log shown only on failure. It also downloads the whole binary into
+# ~/.claude/downloads and stages it under ~/.cache before it lands in
+# ~/.local/share/claude: on a host with a big disk (linux-minimal's `bigdisk`) the
+# profile keeps ~/.cache and ~/.local/share there, and this links the downloads
+# folder there too, since such a host's home may hold a few MB. Signing in
+# is yours: run `claude` once. Its login then lives in ~/.claude, which root can read
+# on a shared host.
+set -u
+
+bin="$HOME/.local/bin/claude"
+if command -v claude >/dev/null 2>&1 || [ -e "$bin" ]; then
+  exit 0
+fi
+
+echo ">>> claude-code: installing (native)"
+tmp="$(mktemp)" || exit 0
+log="$(mktemp)" || exit 0
+trap 'rm -f "$tmp" "$log"' EXIT
+if ! curl -fsSL --max-time 60 -o "$tmp" https://claude.ai/install.sh; then
+  echo ">>> claude-code: WARN cannot download the installer (network/proxy); the next apply tries again"
+  exit 0
+fi
+
+# The one lesson this script exists to remember: validate before executing.
+if ! head -c 200 "$tmp" | grep -qE '^#!/(usr/)?bin/(env )?(ba)?sh'; then
+  echo ">>> claude-code: WARN claude.ai served something that is NOT the install script"
+  head -c 120 "$tmp" | tr -d '\n' | sed 's/^/>>>   payload starts: /'; echo
+  echo ">>>   Likely the corp 'AI usage documentation' acknowledgment gate."
+  echo ">>>   Open https://claude.ai in the Windows browser and acknowledge it; the next apply tries again."
+  exit 0
+fi
+{{- if $big }}
+
+# The download goes to the big disk, not the home.
+if [ ! -e "$HOME/.claude/downloads" ] && [ -d {{ $big | quote }} ]; then
+  mkdir -p "$HOME/.claude" {{ $big | quote }}/.claude-downloads && ln -s {{ $big | quote }}/.claude-downloads "$HOME/.claude/downloads"
+fi
+{{- end }}
+
+if command -v setsid >/dev/null 2>&1; then
+  setsid -w bash "$tmp" </dev/null >"$log" 2>&1 || true
+else
+  bash "$tmp" </dev/null >"$log" 2>&1 || true
+fi
+if [ -e "$bin" ]; then
+  echo ">>> claude-code $("$bin" --version 2>/dev/null | head -1) installed; run 'claude' once to sign in"
+else
+  echo ">>> claude-code: WARN the install did not leave $bin; the next apply tries again. Its output:"
+  sed 's/^/    /' "$log"
+fi
+exit 0
+{{- end }}

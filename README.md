@@ -122,6 +122,7 @@ so it cannot list something that is not actually installed.
 | `run_onchange_install-ebpf-tools.sh.tmpl` | — | bpftool & friends (WSL; upstream tarball quirks handled) |
 | `run_onchange_install-wsl-integration.sh.tmpl` | — | WSL⇄Windows niceties |
 | `run_install-devin.sh.tmpl` | — | Devin CLI, installed when missing (WSL; linux-minimal with the `devin` extra) |
+| `run_install-claude-code.sh.tmpl` | — | Claude Code, installed when missing with its native installer (WSL; linux-minimal with the `claude` extra) |
 | `run_setup-docker-cli.sh.tmpl` | — | docker CLI against rootless Podman + self-updating `dhi`/`scout` plugins (WSL) |
 | `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac) |
 | `run_pin-self-updating-casks.sh.tmpl` | — | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
@@ -155,7 +156,8 @@ so it cannot list something that is not actually installed.
    `linux-minimal`), then writes `~/.zshrc` or `~/.bashrc`, `~/.gitconfig`, etc.
    linux-minimal asks two more questions: a directory on a bigger filesystem
    for tools and caches (blank keeps everything in `$HOME`), and optional
-   extras (`krew` for kubectl plugins, `blesh`, `python`, `devin`).
+   extras (`krew` for kubectl plugins, `blesh`, `python`, and the coding
+   agents `devin`, `claude` and `codex`).
 3. Reload: `exec zsh`, or `exec bash -l` on linux-minimal.
 
 Forking this for yourself? Grep for `junior` and swap in your own identity,
@@ -217,12 +219,18 @@ What it does differently:
   become the new build for you, while the host's own stays at
   `/usr/bin/python3` for the packaged tools that call it by absolute path.
   For a script with dependencies, `uv run --with requests script.py` builds a
-  throwaway environment instead of leaving a venv to look after. `devin` adds
-  the [Devin CLI](https://docs.devin.ai/), Cognition's coding agent, from its
-  own installer: a statically linked binary under `~/.local/share/devin`, about
-  190 MB a version, on the big disk where there is one. Signing in is yours
-  (`devin auth login --force-manual-token-flow` where there is no browser), and
-  the login file it keeps there is readable by root on a shared host. To add an
+  throwaway environment instead of leaving a venv to look after. Three extras
+  add coding agents' command-line tools: `devin` the
+  [Devin CLI](https://docs.devin.ai/), `claude`
+  [Claude Code](https://code.claude.com/docs) and `codex` OpenAI's
+  [Codex CLI](https://github.com/openai/codex). The first two come from their
+  own installers and update themselves; Codex comes from mise, its statically
+  linked build. Each takes a few hundred MB, on the big disk where there is
+  one, and runs on an old enterprise distro (proved on Oracle Linux 8). Signing
+  in is yours, with no browser needed: `devin auth login
+  --force-manual-token-flow`, `codex login --device-auth`, and for `claude`
+  its own sign-in when you first run it. Each keeps its login under your home,
+  readable by root on a shared host. To add an
   extra to a host later, edit the `extras` line in
   `~/.config/chezmoi/chezmoi.toml` and run `up`; a misspelt extra stops the
   apply with a message rather than silently doing nothing.

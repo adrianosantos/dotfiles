@@ -181,4 +181,14 @@ uv        = "latest"   # uv run script.py: a script with its own dependencies, n
 # Precompiled (python.compile = false above): no compiler, no root, about 110 MB.
 python    = "latest"
 {{- end }}
+{{- if has "codex" $extras }}
+
+# --- AI / agents ---
+# Only with the "codex" extra: OpenAI's Codex CLI, the statically linked musl build
+# from its GitHub releases, about 430 MB installed. Signing in is yours: `codex login
+# --device-auth` where there is no browser. The login then lives in ~/.codex, which
+# root can read on a shared host. Claude Code and the Devin CLI are extras too, but
+# their own installers keep them current, so they are run_ scripts, not mise tools.
+codex     = "latest"
+{{- end }}
 {{- end }}

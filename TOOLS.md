@@ -319,9 +319,9 @@ mise from `dot_config/mise/config.toml.tmpl` — no Homebrew on this box — plu
 
 | Tool | What it is |
 | --- | --- |
+| [claude-code](https://claude.com/product/claude-code) | Terminal-based AI coding assistant |
 | [devin](https://docs.devin.ai/) | Cognition's software agent, driven from the terminal |
 | [sbx](https://github.com/docker/sbx-releases) | Build, run, and govern agents across the software development lifecycle |
-| [claude-code](https://claude.com/product/claude-code) | Terminal-based AI coding assistant |
 
 ### System packages (apt)
 
@@ -347,7 +347,7 @@ mise from `dot_config/mise/config.toml.tmpl` — no Homebrew on this box — plu
 
 ## linux-minimal
 
-mise from `dot_config/mise/config.toml.tmpl` on a host with no package manager: static binaries only, nothing that needs root, plus the `run_` installers that render for this profile. krew with its plugins, ble.sh, a current Python with uv, and the Devin CLI join only when the `extras` answer at init asks for them.
+mise from `dot_config/mise/config.toml.tmpl` on a host with no package manager: static binaries only, nothing that needs root, plus the `run_` installers that render for this profile. krew with its plugins, ble.sh, a current Python with uv, and the coding agents (the Devin CLI, Claude Code, the Codex CLI) join only when the `extras` answer at init asks for them.
 
 ### Kubernetes / cloud-native
 
