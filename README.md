@@ -157,7 +157,7 @@ so it cannot list something that is not actually installed.
    linux-minimal asks two more questions: a directory on a bigger filesystem
    for tools and caches (blank keeps everything in `$HOME`), and optional
    extras (`krew` for kubectl plugins, `blesh`, `python`, and the coding
-   agents `devin`, `claude` and `codex`).
+   agents `devin`, `claude`, `codex` and `opencode`).
 3. Reload: `exec zsh`, or `exec bash -l` on linux-minimal.
 
 Forking this for yourself? Grep for `junior` and swap in your own identity,
@@ -219,17 +219,19 @@ What it does differently:
   become the new build for you, while the host's own stays at
   `/usr/bin/python3` for the packaged tools that call it by absolute path.
   For a script with dependencies, `uv run --with requests script.py` builds a
-  throwaway environment instead of leaving a venv to look after. Three extras
+  throwaway environment instead of leaving a venv to look after. Four extras
   add coding agents' command-line tools: `devin` the
   [Devin CLI](https://docs.devin.ai/), `claude`
-  [Claude Code](https://code.claude.com/docs) and `codex` OpenAI's
-  [Codex CLI](https://github.com/openai/codex). The first two come from their
-  own installers and update themselves; Codex comes from mise, its statically
-  linked build. Each takes a few hundred MB, on the big disk where there is
+  [Claude Code](https://code.claude.com/docs), `codex` OpenAI's
+  [Codex CLI](https://github.com/openai/codex) and `opencode`
+  [opencode](https://opencode.ai). The first two come from their own
+  installers and update themselves; Codex and opencode come from mise. None
+  needs Node.js. Each takes a few hundred MB, on the big disk where there is
   one, and runs on an old enterprise distro (proved on Oracle Linux 8). Signing
   in is yours, with no browser needed: `devin auth login
-  --force-manual-token-flow`, `codex login --device-auth`, and for `claude`
-  its own sign-in when you first run it. Each keeps its login under your home,
+  --force-manual-token-flow`, `codex login --device-auth`, `opencode auth
+  login` with a provider's API key, and for `claude` its own sign-in when you
+  first run it. Each keeps its login under your home,
   readable by root on a shared host. To add an
   extra to a host later, edit the `extras` line in
   `~/.config/chezmoi/chezmoi.toml` and run `up`; a misspelt extra stops the

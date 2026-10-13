@@ -181,14 +181,26 @@ uv        = "latest"   # uv run script.py: a script with its own dependencies, n
 # Precompiled (python.compile = false above): no compiler, no root, about 110 MB.
 python    = "latest"
 {{- end }}
-{{- if has "codex" $extras }}
+{{- if or (has "codex" $extras) (has "opencode" $extras) }}
 
 # --- AI / agents ---
-# Only with the "codex" extra: OpenAI's Codex CLI, the statically linked musl build
-# from its GitHub releases, about 430 MB installed. Signing in is yours: `codex login
-# --device-auth` where there is no browser. The login then lives in ~/.codex, which
-# root can read on a shared host. Claude Code and the Devin CLI are extras too, but
-# their own installers keep them current, so they are run_ scripts, not mise tools.
+# Coding agents, each its own extra. Claude Code and the Devin CLI are extras too,
+# but their own installers keep them current, so they are run_ scripts, not mise
+# tools. Signing in is yours, and each keeps its login under your home, which root
+# can read on a shared host.
+{{- end }}
+{{- if has "codex" $extras }}
+# "codex": OpenAI's Codex CLI, the statically linked musl build from its GitHub
+# releases, about 430 MB installed. Sign in with `codex login --device-auth` where
+# there is no browser.
 codex     = "latest"
+{{- end }}
+{{- if has "opencode" $extras }}
+# "opencode": the opencode CLI, about 190 MB. From its GitHub releases directly:
+# mise's registry entry lists a 2.0.x the project never released (2026-10-13), so
+# its "latest" fails to install. The glibc "baseline" build, because the musl ones
+# are linked against musl, whose loader a glibc host lacks, and baseline needs no
+# AVX2, which some virtual CPUs hide. Sign in with `opencode auth login`.
+"github:anomalyco/opencode" = { version = "latest", asset_pattern = "opencode-linux-{{ if eq .chezmoi.arch "arm64" }}arm64{{ else }}x64-baseline{{ end }}.tar.gz" }
 {{- end }}
 {{- end }}

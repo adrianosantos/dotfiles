@@ -306,7 +306,8 @@ def main():
             "manager: static binaries only, nothing that needs root, plus the `run_` "
             "installers that render for this profile. krew with its plugins, ble.sh, "
             "a current Python with uv, and the coding agents (the Devin CLI, Claude Code, "
-            "the Codex CLI) join only when the `extras` answer at init asks for them.")
+            "the Codex CLI, opencode) join only when the `extras` answer at init asks "
+            "for them.")
 
     out = "\n".join(lines).rstrip() + "\n"
     path = os.path.join(SRC, "TOOLS.md")
