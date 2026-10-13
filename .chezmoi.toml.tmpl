@@ -63,11 +63,11 @@
 {{- $extras := "" -}}
 {{- if eq $machine "linux-minimal" -}}
 {{-   $bigdisk = promptStringOnce . "bigdisk" "Writable dir on a bigger filesystem for tools/caches, blank to keep everything in $HOME" "" -}}
-{{-   $extras = promptStringOnce . "extras" "Optional extras, comma-separated. Available: krew (kubectl plugins, needs git), blesh (fish-style autosuggestions for bash), python (a current Python plus uv, ahead of the host's python3). Blank for none" "" -}}
+{{-   $extras = promptStringOnce . "extras" "Optional extras, comma-separated. Available: krew (kubectl plugins, needs git), blesh (fish-style autosuggestions for bash), python (a current Python plus uv, ahead of the host's python3), devin (the Devin CLI, Cognition's coding agent). Blank for none" "" -}}
 {{- end -}}
 {{- /* Same guard as the roles: an extra is usually added later by editing the config by
        hand, and a misspelt one would otherwise just not happen. */ -}}
-{{- $knownExtras := list "krew" "blesh" "python" -}}
+{{- $knownExtras := list "krew" "blesh" "python" "devin" -}}
 {{- range (splitList "," $extras) -}}
 {{-   $e := trim . -}}
 {{-   if $e -}}
@@ -126,5 +126,7 @@ scriptTempDir = {{ (printf "%s/.chezmoi-tmp" .chezmoi.homeDir) | quote }}
     # python: a current Python from mise (precompiled, no compiler or root) plus uv.
     #         mise's shims lead PATH, so `python3` and `pip` become this one for you;
     #         the host's own stays at /usr/bin/python3.
+    # devin: the Devin CLI, from its own installer, under ~/.local/share/devin. Its
+    #        login file there is readable by root on a shared host.
     # To add one later: edit this line, then run `up`.
     extras = {{ $extras | quote }}

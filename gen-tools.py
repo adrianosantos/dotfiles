@@ -304,9 +304,9 @@ def main():
     section("linux-minimal", group(mise_lm, scripts_lm),
             "mise from `dot_config/mise/config.toml.tmpl` on a host with no package "
             "manager: static binaries only, nothing that needs root, plus the `run_` "
-            "installers that render for this profile. krew with its plugins, ble.sh, and "
-            "a current Python with uv, join only when the `extras` answer at init asks "
-            "for them.")
+            "installers that render for this profile. krew with its plugins, ble.sh, "
+            "a current Python with uv, and the Devin CLI join only when the `extras` "
+            "answer at init asks for them.")
 
     out = "\n".join(lines).rstrip() + "\n"
     path = os.path.join(SRC, "TOOLS.md")

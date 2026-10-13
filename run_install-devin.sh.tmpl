@@ -1,0 +1,54 @@
+{{- /* wsl-work always; linux-minimal only when the "extras" answer lists devin (the dev
+       jump host, where a probe on 2026-10-13 found it installs and reaches its service). */ -}}
+{{- $want := eq .machine "wsl-work" -}}
+{{- if eq .machine "linux-minimal" -}}
+{{-   if hasKey . "extras" }}{{ if has "devin" (regexSplit "\\s*,\\s*" (trim .extras) -1) }}{{ $want = true }}{{ end }}{{ end -}}
+{{- end -}}
+{{- if $want -}}
+#!/bin/bash
+# Install the Devin CLI where it is missing.
+# tools-category: AI / agents
+# tools-installs: devin
+# It's distributed as a curl|bash installer from cli.devin.ai (not in mise, not a
+# GitHub release), so it can't be a mise-managed tool. The installer puts a statically
+# linked binary under ~/.local/share/devin (about 190 MB a version; on linux-minimal
+# that folder lives on the big disk) and links ~/.local/bin/devin. INSTALL-IF-ABSENT:
+# this never touches an existing devin, so `devin update` owns the version after the
+# first install. Auth/login is a one-time manual step, intentionally NOT done here:
+# `devin auth login`, or `devin auth login --force-manual-token-flow` with no browser.
+# The login then lives in ~/.local/share/devin/credentials.toml, which root can read
+# on a shared host.
+#
+# A plain run_ script, so it runs at every apply: silent while devin is there, an
+# install when it is missing. A failed download only warns, so the rest of the apply
+# goes on and the next one tries again (a failing run_ script would abort the apply).
+set -uo pipefail
+
+bin="$HOME/.local/bin/devin"
+if [ -e "$bin" ] || command -v devin >/dev/null 2>&1; then
+  exit 0
+fi
+for t in curl tar sha256sum; do
+  if ! command -v "$t" >/dev/null 2>&1; then
+    echo ">>> devin: not installed: this host has no $t, which the installer needs"
+    exit 0
+  fi
+done
+
+echo ">>> devin: installing the latest from cli.devin.ai ..."
+tmp="$(mktemp)" || exit 0
+trap 'rm -f "$tmp"' EXIT
+if ! curl -fsSL https://cli.devin.ai/install.sh -o "$tmp"; then
+  echo ">>> devin: WARN the installer could not be downloaded; the next apply tries again"
+  exit 0
+fi
+# stdin closed so the installer's trailing interactive `devin setup` can't block
+# chezmoi; the binary is installed before that step runs.
+bash "$tmp" </dev/null || true
+if [ -e "$bin" ]; then
+  echo ">>> devin: installed; run 'devin auth login' once to sign in"
+else
+  echo ">>> devin: WARN the install did not leave $bin; the next apply tries again"
+fi
+exit 0
+{{- end }}

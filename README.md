@@ -121,7 +121,7 @@ so it cannot list something that is not actually installed.
 | `bootstrap.sh` | — | Installs a static chezmoi with no package manager and runs the init; `--bigdisk DIR` keeps even that off a small home |
 | `run_onchange_install-ebpf-tools.sh.tmpl` | — | bpftool & friends (WSL; upstream tarball quirks handled) |
 | `run_onchange_install-wsl-integration.sh.tmpl` | — | WSL⇄Windows niceties |
-| `run_onchange_install-devin.sh.tmpl` | — | Devin CLI (WSL) |
+| `run_install-devin.sh.tmpl` | — | Devin CLI, installed when missing (WSL; linux-minimal with the `devin` extra) |
 | `run_setup-docker-cli.sh.tmpl` | — | docker CLI against rootless Podman + self-updating `dhi`/`scout` plugins (WSL) |
 | `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac) |
 | `run_pin-self-updating-casks.sh.tmpl` | — | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
@@ -155,7 +155,7 @@ so it cannot list something that is not actually installed.
    `linux-minimal`), then writes `~/.zshrc` or `~/.bashrc`, `~/.gitconfig`, etc.
    linux-minimal asks two more questions: a directory on a bigger filesystem
    for tools and caches (blank keeps everything in `$HOME`), and optional
-   extras (`krew` for kubectl plugins, `blesh`, `python`).
+   extras (`krew` for kubectl plugins, `blesh`, `python`, `devin`).
 3. Reload: `exec zsh`, or `exec bash -l` on linux-minimal.
 
 Forking this for yourself? Grep for `junior` and swap in your own identity,
@@ -217,7 +217,12 @@ What it does differently:
   become the new build for you, while the host's own stays at
   `/usr/bin/python3` for the packaged tools that call it by absolute path.
   For a script with dependencies, `uv run --with requests script.py` builds a
-  throwaway environment instead of leaving a venv to look after. To add an
+  throwaway environment instead of leaving a venv to look after. `devin` adds
+  the [Devin CLI](https://docs.devin.ai/), Cognition's coding agent, from its
+  own installer: a statically linked binary under `~/.local/share/devin`, about
+  190 MB a version, on the big disk where there is one. Signing in is yours
+  (`devin auth login --force-manual-token-flow` where there is no browser), and
+  the login file it keeps there is readable by root on a shared host. To add an
   extra to a host later, edit the `extras` line in
   `~/.config/chezmoi/chezmoi.toml` and run `up`; a misspelt extra stops the
   apply with a message rather than silently doing nothing.
