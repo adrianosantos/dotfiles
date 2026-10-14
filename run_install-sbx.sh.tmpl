@@ -18,7 +18,9 @@ set -eu
 
 REPO="docker/sbx-releases"
 
-cur="$(sbx version 2>/dev/null | sed -n 's/^sbx version: \(v[^ ]*\).*/\1/p' | head -1)"
+# The colon and the leading v are both optional: this matched only "sbx version: vX.Y.Z",
+# and v0.48.0 prints "sbx version v0.48.0 <commit>", so every `up` reinstalled it.
+cur="$(sbx version 2>/dev/null | sed -n 's/^sbx version:\{0,1\} *\(v\{0,1\}[0-9][^ ]*\).*/\1/p' | head -1)"
 if [ -n "${GITHUB_TOKEN:-}" ]; then
   latest="$(curl -fsSL -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
@@ -32,7 +34,7 @@ if [ -z "$latest" ]; then
   echo ">>> WARN: cannot resolve sbx latest (offline/rate-limit?) — keeping ${cur:-none}"
   exit 0
 fi
-[ "$latest" = "$cur" ] && exit 0   # current — stay silent
+[ "${latest#v}" = "${cur#v}" ] && exit 0   # current: stay silent
 
 # Pick the .deb built for this Ubuntu release (fall back to the newest LTS build).
 . /etc/os-release
