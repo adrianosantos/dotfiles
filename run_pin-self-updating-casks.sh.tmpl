@@ -29,6 +29,13 @@ set -eu
 # brew's upgrade of it removes root-owned privileged helpers, so it needs sudo.
 # That makes `up` unable to finish over ssh on the lab node, which is exactly how
 # that machine is driven. Its own updater keeps it current.
+#
+# wireshark-app is the one entry the Brewfile does NOT declare: it is installed by
+# hand when a capture needs it (the Brewfile says why), and listing it here pins
+# such an install at the next apply. Unpinned, it would stop `up` at a password
+# prompt: by default a bare `brew upgrade` also upgrades an auto_updates cask
+# whose app is older than the cask, and Wireshark's updater runs only while the
+# app does. Upgrading this cask reinstalls its two installer packages, as root.
 PINNED=(1password claude docker-desktop forklift google-chrome google-chrome@canary obsidian wireshark-app)
 
 command -v brew >/dev/null 2>&1 || exit 0

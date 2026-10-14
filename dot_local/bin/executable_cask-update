@@ -19,9 +19,10 @@
 # behind, so `brew outdated --greedy` also lists apps that are current. Run
 # `brew update` (or `up`) first, so the cask's version is the latest. macOS may
 # ask once to let the terminal modify apps (System Settings > Privacy & Security >
-# App Management), and the wireshark-app cask reinstalls two installer packages,
-# which asks for a password. `cask-update claude` refuses to run inside the Claude
-# desktop app: quitting the app would end the session it runs in.
+# App Management), and a cask that installs root-owned parts (installer packages,
+# privileged helpers) asks for a password while it upgrades. `cask-update claude`
+# refuses to run inside the Claude desktop app: quitting the app would end the
+# session it runs in.
 set -eu
 
 APPDIR="${CASK_UPDATE_APPDIR:-/Applications}"

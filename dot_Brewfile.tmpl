@@ -146,17 +146,22 @@ cask "google-chrome@canary"   # renamed upstream from google-chrome-canary (old 
 cask "tor-browser"
 
 # --- Casks: network ---
-# wifiman installs via pkg (one sudo prompt the first time); wireshark-app is the
-# GUI (the `wireshark` formula is the CLI-only build) and ships a ChmodBPF pkg.
+# wifiman installs via pkg (one sudo prompt the first time).
 cask "wifiman"
-# Wireshark is deliberately NOT declared. The `wireshark-app` cask installs two pkgs
-# besides the app: "Add Wireshark to the system path" and "Install ChmodBPF", the latter
+# Wireshark is deliberately NOT declared. The `wireshark-app` cask (the GUI; the
+# `wireshark` formula is the CLI-only build) installs two pkgs besides the app:
+# "Add Wireshark to the system path" and "Install ChmodBPF", the latter
 # a ROOT LaunchDaemon that chmods /dev/bpf* at every boot so non-root processes can
 # capture. That is a persistent, admin-level change to how the machine handles packet
 # capture, and it is not something a new Mac should acquire silently. Wireshark is an
 # on-demand tool here: install it by hand when a capture is actually needed
 #   brew install --cask wireshark-app
 # or better, capture inside a container on a lab node and leave the Mac untouched.
+# The next chezmoi apply (every `up` runs one) pins a hand install, see
+# run_pin-self-updating-casks.sh, and brew refuses to uninstall a pinned cask:
+#   brew unpin --cask wireshark-app && brew uninstall --cask wireshark-app
+# The uninstall leaves the `access_bpf` group. Leave it too: some capture tools ship
+# their own copy of ChmodBPF, which gives /dev/bpf* to that same group at boot.
 
 # --- Casks: containers + Kubernetes UIs ---
 cask "docker-desktop"
