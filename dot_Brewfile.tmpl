@@ -42,6 +42,7 @@ brew "zsh-syntax-highlighting"
 {{ if not $lab }}brew "awscli"{{ end }}
 {{ if not $lab }}brew "azure-cli"{{ end }}
 {{ if not $lab }}brew "oci-cli"{{ end }}
+{{ if not $lab }}brew "junior/tap/s3tx"{{ end }}   # s3tx: files through a private S3 bucket, tx is its far end; its tap is trusted in run_trust-taps.sh
 {{ if not $lab }}brew "hashicorp/tap/vault"{{ end }}   # the Vault CLI; its tap is trusted in run_trust-taps.sh
 {{ if not $intel }}brew "vercel-cli"{{ end }}   # not on Intel: it needs node, and node is a long build here
 

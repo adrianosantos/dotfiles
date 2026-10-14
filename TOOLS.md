@@ -28,6 +28,7 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [awscli](https://aws.amazon.com/cli/) | Official Amazon AWS command-line interface |
 | [azure-cli](https://docs.microsoft.com/cli/azure/overview) | Microsoft Azure CLI 2.0 |
 | [oci-cli](https://docs.cloud.oracle.com/iaas/Content/API/Concepts/cliconcepts.htm) | Oracle Cloud Infrastructure CLI |
+| [s3tx](https://github.com/junior/s3tx) | Move files through a private S3 bucket with short-lived presigned URLs |
 | [vault](https://developer.hashicorp.com/vault) | HashiCorp Vault CLI: read and write secrets, log in, manage leases |
 | [vercel-cli](https://vercel.com/home) | Command-line interface for Vercel |
 
