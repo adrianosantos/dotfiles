@@ -25,7 +25,7 @@
 # each that is minutes, not hours, and only once.
 
 # --- Taps ---
-tap "docker/tap"     # Docker Sandboxes (sbx)
+{{ if and (eq .chezmoi.arch "arm64") (not $lab) }}tap "docker/tap"{{ end }}     # Docker Sandboxes (sbx): only where the sbx cask is, the one place run_trust-taps.sh trusts it
 tap "junior/tap"
 {{ if not $lab }}tap "hashicorp/tap"{{ end }}   # Vault left homebrew-core with its licence change; HashiCorp keeps this tap
 

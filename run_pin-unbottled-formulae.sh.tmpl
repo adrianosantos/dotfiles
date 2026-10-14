@@ -4,9 +4,10 @@
 #
 # Homebrew stopped building Intel bottles in September 2026. The formulae below
 # are installed from bottles built before that and they work fine; what hurts is
-# their next version bump, when `up` would build them from source, each behind a
-# heavy toolchain (Rust and LLVM, Node, or GHC): hours, unattended, usually over
-# ssh. Pinning makes brew skip them and keeps the working copies.
+# their next version bump, when `up` would build them from source, behind a heavy
+# toolchain (Rust and LLVM, Node, or GHC) or into a test suite that fails here:
+# hours, unattended, usually over ssh. Pinning makes brew skip them and keeps the
+# working copies.
 #
 # They stay declared in the Brewfile on purpose, so a machine that CAN pour them
 # still gets them, and so a future Intel bottle would only need `brew unpin`.
@@ -18,7 +19,7 @@ set -eu
 
 command -v brew >/dev/null 2>&1 || exit 0
 
-# Three groups, all installed and working, none worth rebuilding here:
+# All installed and working, none worth rebuilding here:
 #   eza, git-delta, trivy         Rust, and no Intel binary published upstream.
 #   node, merve, simdutf, vercel  A long build. The only thing that wanted node
 #                                 here was vercel, which an Intel machine no
@@ -26,9 +27,12 @@ command -v brew >/dev/null 2>&1 || exit 0
 #   yq                            Builds its man page with pandoc, a Haskell
 #                                 program: Homebrew installs GHC and cabal and
 #                                 compiles pandoc first, an hour or more.
+#   gnupg                         Its build runs the test suite, and the suite
+#                                 fails here: the tests cannot start gpg-agent
+#                                 ("No agent running"), so the upgrade aborts.
 # `brew upgrade` walks every INSTALLED formula, not just the declared ones, which
 # is why a leftover that nothing declares still has to be pinned.
-PINNED=(eza git-delta trivy node merve simdutf vercel yq)
+PINNED=(eza git-delta trivy node merve simdutf vercel yq gnupg)
 
 already="$(brew list --pinned 2>/dev/null || true)"
 
@@ -37,7 +41,7 @@ for f in "${PINNED[@]}"; do
   if printf '%s\n' "$already" | grep -qx "$f"; then
     continue                                               # already pinned
   fi
-  echo ">>> pinning $f: no Intel bottle, and rebuilding it pulls in a heavy toolchain"
+  echo ">>> pinning $f: no Intel bottle, and building it here is slow or fails"
   brew pin "$f" >/dev/null 2>&1 || echo ">>> WARN: could not pin $f"
 done
 {{ end -}}
