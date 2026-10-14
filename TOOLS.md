@@ -20,7 +20,7 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search) | Zsh port of Fish shell's history search |
 | [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) | Fish shell like syntax highlighting for zsh |
 
-### Formulae: cloud CLIs (not via mise)
+### Cloud CLIs (not via mise)
 
 | Tool | What it is |
 | --- | --- |
