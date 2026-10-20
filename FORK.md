@@ -11,8 +11,8 @@ Two things, kept as small as possible so upstream merges cleanly:
    The real email goes in `~/.gitconfig.local` (see "Work overlay" below),
    never in this repo.
 
-2. **Removed `junior/tap`** — the tap and its formulae (`s3tx`, `skilla`) are
-   Junior's personal tools. Everything else stays.
+That's it. Everything else — including `junior/tap` (`s3tx`, `skilla`),
+   the run_ scripts, mise, cloud CLIs — stays as upstream.
 
 ## Setup
 
