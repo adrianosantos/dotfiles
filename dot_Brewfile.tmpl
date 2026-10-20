@@ -26,7 +26,6 @@
 
 # --- Taps ---
 {{ if and (eq .chezmoi.arch "arm64") (not $lab) }}tap "docker/tap"{{ end }}     # Docker Sandboxes (sbx): only where the sbx cask is, the one place run_trust-taps.sh trusts it
-tap "junior/tap"
 {{ if not $lab }}tap "hashicorp/tap"{{ end }}   # Vault left homebrew-core with its licence change; HashiCorp keeps this tap
 
 # --- Formulae: shell + completions ---
@@ -42,7 +41,6 @@ brew "zsh-syntax-highlighting"
 {{ if not $lab }}brew "awscli"{{ end }}
 {{ if not $lab }}cask "azure-cli"{{ end }}   # a cask since homebrew-core moved it there: Microsoft's own build
 {{ if not $lab }}brew "oci-cli"{{ end }}
-{{ if not $lab }}brew "junior/tap/s3tx"{{ end }}   # s3tx: files through a private S3 bucket, tx is its far end; its tap is trusted in run_trust-taps.sh
 {{ if not $lab }}brew "hashicorp/tap/vault"{{ end }}   # the Vault CLI; its tap is trusted in run_trust-taps.sh
 {{ if not $lab }}cask "vercel"{{ end }}   # a cask since homebrew-core moved it there: Vercel's native build, no node
 
@@ -96,7 +94,6 @@ brew "jq"
 brew "mkcert"
 brew "pinentry-mac"   # GUI passphrase prompt for gpg-agent (see ~/.gnupg/gpg-agent.conf)
 brew "ripgrep"
-brew "junior/tap/skilla"
 brew "terraform-docs"
 brew "tfsec"
 {{ if not $intel }}brew "vhs"{{ end }}   # not on Intel: pulls the whole ffmpeg stack in from source
