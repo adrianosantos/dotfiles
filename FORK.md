@@ -59,7 +59,7 @@ git merge upstream/main
 
 ## Work overlay
 
-Work-specific config (work email, internal tools, `apple-claude-code`) goes in
+Work-specific config (work email, internal tools, work-only casks) goes in
 a **private overlay repo**, not here. See upstream's README section on overlays.
 
 In short: clone a private repo to `~/.local/share/dotfiles-overlay` on the work
