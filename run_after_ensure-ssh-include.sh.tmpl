@@ -1,10 +1,13 @@
 {{- $lab := "" -}}{{- if hasKey . "lab_hosts" }}{{ $lab = .lab_hosts }}{{ end -}}
-{{ if and (eq .machine "mac-personal") $lab -}}
+{{ if eq .machine "mac-personal" -}}
 #!/usr/bin/env bash
 # ~/.ssh/config stays UNMANAGED on the Macs: it holds personal host entries
-# (GitHub, and others) that should not be templated into a public repo. But the
-# lab fragment chezmoi does manage is useless unless something pulls it in, so
-# this makes sure the Include line is there, and nothing else.
+# (GitHub, and others) that should not be templated into a public repo. But two
+# things put host fragments into ~/.ssh/config.d, and they are useless unless
+# something pulls them in: the lab fragment chezmoi renders from `lab_hosts`,
+# and a private overlay (~/.local/share/dotfiles-overlay) whose install.sh links
+# work hosts there, as on a work Mac. When either is present, this makes sure
+# the Include line is there, and nothing else. With neither, it does nothing.
 #
 # Include must be FIRST: ssh keeps the first value it sees for each keyword, so
 # an Include placed after a `Host *` block would lose to it.
@@ -13,6 +16,10 @@
 # do, and an onchange script that skipped because ~/.ssh did not exist yet would
 # record itself as done and never retry. QUIET BY DESIGN, prints only on change.
 set -eu
+
+{{ if $lab }}want=1{{ else }}want=0{{ end }}   # lab hosts declared in the chezmoi config
+[ -d "$HOME/.local/share/dotfiles-overlay" ] && want=1   # a private overlay may link hosts in
+[ "$want" = 1 ] || exit 0
 
 cfg="$HOME/.ssh/config"
 line='Include ~/.ssh/config.d/*'

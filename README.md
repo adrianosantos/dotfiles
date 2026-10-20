@@ -276,6 +276,11 @@ into those paths; an `up` shell function keeps everything (core, overlay,
 packages) in sync with one command. Result: one public repo to share, zero
 employer details in it, and a work machine that's still fully configured.
 
+It works the same on a work Mac as on WSL. On a Mac, `~/.ssh/config` stays your
+own file: once an overlay sits at `~/.local/share/dotfiles-overlay`, the next
+apply adds `Include ~/.ssh/config.d/*` at its top, keeping a backup, so the
+overlay's hosts are read.
+
 ## Bootstrapping a brand-new repo from this layout
 
 ```sh
