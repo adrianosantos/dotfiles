@@ -48,43 +48,7 @@ single-sourced and isolates the differences in clearly-labelled template blocks.
 
 ## How it fits together
 
-```mermaid
-flowchart TB
-    dev(["✏️ edits (always via chezmoi edit)"]) -->|git push| core
-
-    core[("<b>this repo</b><br/>public core — source of truth")]
-    overlay[("private overlay repo<br/>employer-specific bits")]
-
-    core -->|chezmoi apply| mac
-    core -.->|"chezmoi init --apply<br/>(same mac profile)"| macN
-    core -->|"chezmoi update<br/>(anonymous https)"| wsl
-    core -->|"bootstrap.sh, then<br/>chezmoi init --apply"| lm
-    overlay -->|"install.sh symlinks<br/>fragments"| includes
-
-    subgraph mac["🍎 mac-personal — macOS"]
-        brewfile["Homebrew ← Brewfile<br/>(all CLI tools + casks)"]
-        misemac["mise<br/>(language runtimes only)"]
-    end
-
-    macN["🖥️ any additional mac — same profile<br/>(e.g. an always-on mini<br/>running headless AI agents)"]
-
-    subgraph wsl["🐧 wsl-work — WSL2 Ubuntu"]
-        misewsl["mise<br/>(languages + full CLI toolchain)"]
-        aptpkgs["apt via run_onchange<br/>(the few non-mise bits)"]
-        docker["docker CLI + dhi/scout plugins<br/>→ rootless Podman socket"]
-        includes["native include points:<br/>mise conf.d · git include<br/>ssh config.d · zsh local.d"]
-    end
-
-    subgraph lm["🧰 linux-minimal — any Linux, home directory only"]
-        boot["bootstrap.sh<br/>(checksum-verified static chezmoi, no root)"]
-        miselm["mise<br/>(every tool, static binaries)"]
-        bigdisk["optional bigger filesystem<br/>(tools, caches, history, temp)"]
-    end
-
-    krew["krew plugins — declarative list,<br/>both machines (run_onchange)"]
-    mac -.-> krew
-    wsl -.-> krew
-```
+![How it fits together: the public core is applied to mac-personal, wsl-work and linux-minimal; a private overlay links work-only fragments into native include points; up syncs everything](.github/architecture.svg)
 
 One `up` command per machine syncs everything above: core repo, overlay,
 packages, and plugins.
@@ -311,6 +275,11 @@ The overlay is a plain repo with an `install.sh` that symlinks its fragments
 into those paths; an `up` shell function keeps everything (core, overlay,
 packages) in sync with one command. Result: one public repo to share, zero
 employer details in it, and a work machine that's still fully configured.
+
+It works the same on a work Mac as on WSL. On a Mac, `~/.ssh/config` stays your
+own file: once an overlay sits at `~/.local/share/dotfiles-overlay`, the next
+apply adds `Include ~/.ssh/config.d/*` at its top, keeping a backup, so the
+overlay's hosts are read.
 
 ## Bootstrapping a brand-new repo from this layout
 

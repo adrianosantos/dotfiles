@@ -53,12 +53,16 @@ bootstrap.sh
 {{ $lab := "" }}{{ if hasKey . "lab_hosts" }}{{ $lab = .lab_hosts }}{{ end }}
 {{ if not $lab -}}
 # The lab ssh fragment is generated from `lab_hosts` in the chezmoi config; with
-# nothing declared there is nothing to write. Ignore the DIRECTORY and the script
-# as well as the file: ignoring only the file still left chezmoi creating an empty
-# ~/.ssh/config.d and managing a script that renders to nothing, which is clutter
-# on hosts that will never have a lab host (the jumphosts have tiny homes).
+# nothing declared there is nothing to write. Ignore the DIRECTORY as well as the
+# file: ignoring only the file still left chezmoi creating an empty ~/.ssh/config.d,
+# which is clutter on hosts that will never have a lab host (the jumphosts have
+# tiny homes). A private overlay creates the directory itself when it needs it.
 .ssh/config.d
 .ssh/config.d/lab
+{{- end }}
+{{ if ne .machine "mac-personal" -}}
+# Only the Macs keep ~/.ssh/config unmanaged, so only they need the include line
+# added: for lab hosts, or for a private overlay's hosts on a work Mac.
 ensure-ssh-include.sh
 {{- end }}
 {{ if or (ne .machine "mac-personal") (has "docker-engine" $roles) -}}
