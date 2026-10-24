@@ -194,6 +194,16 @@ command -v vault &>/dev/null && (( ! $+_comps[vault] )) && complete -o nospace -
 {{- if ne .machine "wsl-work" }}
 command -v aws_completer &>/dev/null && complete -C "$(command -v aws_completer)" aws
 {{- end }}
+{{- if eq .machine "mac-personal" }}
+# kcx completes its contexts and commands from its own word list.
+if command -v kcx &>/dev/null; then
+  _kcx() { local -a w; w=(${(f)"$(kcx __complete ${words[2,CURRENT-1]} 2>/dev/null)"}); compadd -a w }
+  compdef _kcx kcx
+fi
+# ~/.zshenv set KUBECONFIG when this shell started; refresh it before each prompt
+# too, so a cluster kcx (or an agent) added or removed meanwhile is there at once.
+(( ${+functions[_kcx_kubeconfig_env]} )) && precmd_functions+=(_kcx_kubeconfig_env)
+{{- end }}
 
 # === Aliases ===
 # --- Modern CLI replacements ---
@@ -217,8 +227,15 @@ alias path='print -l -- $path'
 # --- Cloud Native ---
 alias k=kubecolor
 alias h=helm
+{{- if eq .machine "mac-personal" }}
+# kcx keeps a kubeconfig file per cluster (~/.local/bin/kcx, `kcx -h`). kubectx stays
+# installed and works on the same files.
+alias kc=kcx
+alias kcc='kcx -c'
+{{- else }}
 alias kc=kubectx
 alias kcc='kubectx -c'
+{{- end }}
 alias kn=kubens
 alias knc='kubens -c'
 

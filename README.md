@@ -77,6 +77,8 @@ so it cannot list something that is not actually installed.
 | `dot_local/bin/executable_cask-update` | `~/.local/bin/cask-update` | mac: updates a pinned cask's app by hand, after a yes: quits it, unpins, upgrades, pins again, reopens it; `--check`, which `up` runs, names the apps behind their cask by the app's own version. `cask-update claude` is how the Claude desktop app is updated, its own updater being blocked |
 | `dot_config/claude-desktop/block-auto-updates.mobileconfig` | `~/.config/claude-desktop/` | mac: the configuration profile that blocks the Claude desktop app's own updater; installed once, by hand |
 | `dot_local/bin/executable_vaults` | `~/.local/bin/vaults` | one status line per Obsidian vault (changes, commits to push or pull, last commit) and `vaults pull` for all of them; POSIX sh, not on linux-minimal |
+| `dot_local/bin/executable_kcx.tmpl` | `~/.local/bin/kcx` | mac: a kubeconfig file per cluster, a context picker, temp kind clusters on any Docker engine, and a read-only shell for AI tools; see [Kubeconfigs](#kubeconfigs-kcx) |
+| `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG` for every zsh, coding agents' included; on a `docker-engine` machine also the PATH that ssh commands need |
 | `private_dot_ssh/private_config` | `~/.ssh/config` | WSL-only: overlay include + keepalives for stateful-firewall networks |
 | `run_onchange_install-apt-packages.sh.tmpl` | — | Declarative apt list (WSL) |
 | `run_onchange_install-krew-plugins.sh.tmpl` | — | Declarative kubectl/krew plugin list (mac and WSL; on linux-minimal only when asked for via `extras`; bootstraps krew on Linux, skips without git) |
@@ -238,7 +240,7 @@ machine is FOR, not by what happens to be installed on it:
 | --- | --- | --- |
 | *(blank)* | an ordinary workstation, which is the common case | nothing |
 | `session-host` | the machine runs long-lived agent sessions others connect to | a launchd job, and `up` restarts it after the CLI is upgraded |
-| `docker-engine` | other machines run builds on this one's Docker engine over ssh | `~/.zshenv`, so a non-interactive `ssh host command` can find `docker` |
+| `docker-engine` | other machines run builds on this one's Docker engine over ssh | a PATH line in `~/.zshenv`, so a non-interactive `ssh host command` can find `docker`; `kcx add` refuses there, a lab node holding no credentials |
 | `secrets` | the machine holds credentials provisioned from a password manager | the templates that write those files |
 
 Roles rather than machine names, because **a role moves and a name does not**.
@@ -257,6 +259,54 @@ Lab machines reachable over ssh are configured next to this, as `lab_hosts`,
 in `alias:hostname` pairs. The hostnames stay in your own config rather than in
 this repo, so a public fork carries the structure and none of your addresses.
 The alias half can hold several names separated by spaces.
+
+## Kubeconfigs (kcx)
+
+On the Macs every cluster gets a kubeconfig file of its own, so importing one
+cluster can never overwrite another one's credentials, which is what happens when
+every tool merges into `~/.kube/config`. `kcx` (`~/.local/bin/kcx`, `kcx -h`)
+keeps this layout:
+
+| path | holds |
+| --- | --- |
+| `~/.kube/config` | the current context, and nothing else of kcx's. kubectl writes `current-context` into the first file of `KUBECONFIG`, so this one comes first and a switch never rewrites a file that holds credentials. A tool that writes "the default kubeconfig" lands here too: `kcx ls` points it out, and `kcx adopt` moves it into a file of its own |
+| `~/.kube/configs/NAME.yaml` | one permanent cluster; import renames its cluster, user and context to `NAME` |
+| `~/.kube/temp/NAME@ENGINE.yaml` | one temp kind cluster, `ENGINE` being the docker context it runs on; deleted with the cluster |
+
+`KUBECONFIG` lists them in that order. `~/.zshenv` sets it, because zsh reads that
+file in every shell: terminals, the `zsh -c` and `zsh -lc` that coding agents run
+their commands in, and `ssh host command`. It is recomputed for each new shell and
+before each prompt, and a `KUBECONFIG` someone set on purpose is left alone. `kcx env`
+prints it for any other shell.
+
+- `kcx` picks a context with fzf; `kcx NAME`, `kcx -` and `kcx -c` switch, go back
+  and print the current one (`kc` and `kcc` are aliases). kubectx works on the same
+  files.
+- `kcx add NAME FILE`, `kcx add NAME -` (standard input) or `kcx add NAME -- CMD...`
+  imports a cluster. The last form runs a provider's own command with `KUBECONFIG`
+  pointed at a new file, for example `kcx add eks-lab -- aws eks update-kubeconfig
+  --name lab`, and replaces `{}` with that file's path for tools that take a file
+  option instead. `kcx rm` moves a file to the Trash; `kcx mv` renames one.
+- `kcx temp create NAME [--engine CONTEXT] [--config PRESET]` runs kind with the
+  presets in `~/.config/kind`. On a remote engine, a docker context over ssh, the API
+  server listens on that machine's network address, which kind also puts in its
+  certificate, so the cluster works from the machine that made it. `kcx temp ls`,
+  `kcx temp rm` and `kcx temp prune` look after them.
+- `kcx run NAME -- CMD...` runs one command against one cluster without touching the
+  current context. `kcx -r [NAME] [-- CMD...]` opens a read-only shell, or runs one
+  read-only command, through a local `kubectl proxy` that refuses writes, exec, attach
+  and port-forward. Its kubeconfig holds no credentials and stays in place through
+  the shell's own startup files.
+
+**Agents** share one current context with every other shell, so a switch made in one
+session points kubectl in all the others at a different cluster. They name the
+cluster per command instead, `kubectl --context NAME` or `kcx run NAME -- CMD`, and
+use `kcx -r` for anything that only reads. `kcx add` and `kcx temp create` never
+switch unless given `--use`.
+
+On a `docker-engine` machine `kcx add` refuses, a lab node holding no credentials;
+temp clusters are fine there. Apps started from the Dock do not see `KUBECONFIG`:
+add `~/.kube/configs` and `~/.kube/temp` to their kubeconfig settings.
 
 ## Work overlay (keeping employer-specific bits private)
 

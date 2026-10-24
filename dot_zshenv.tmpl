@@ -1,11 +1,18 @@
 {{- $roles := list -}}{{- if hasKey . "roles" }}{{ $roles = .roles }}{{ end -}}
-{{- if has "docker-engine" $roles -}}
-# ~/.zshenv — managed by chezmoi (role: docker-engine).
+{{- if eq .machine "mac-personal" -}}
+# ~/.zshenv - managed by chezmoi (mac-personal).
 #
-# zsh reads THIS file on every invocation, including the `zsh -c "<command>"` that
-# sshd runs for `ssh host <command>`. Neither .zshrc nor .zprofile is read there,
-# which is why the fix cannot live in either of them.
+# zsh reads THIS file on every invocation: terminals, the `zsh -c` and `zsh -lc`
+# that coding agents run their commands in, and the `zsh -c "<command>"` that sshd
+# runs for `ssh host <command>`. .zshrc is read only by interactive shells and
+# .zprofile only by login shells, which is why what every shell needs lives here.
 #
+# Keep this file minimal and free of side effects: it runs for every zsh, scripts
+# included. Environment only, nothing interactive, no output: docker's ssh
+# transport carries its data over the stdout of a command started this way.
+{{- if has "docker-engine" $roles }}
+
+# --- PATH for commands run over ssh (role: docker-engine) ---
 # macOS builds the default PATH with path_helper, run from /etc/profile, and only
 # LOGIN shells source that. So a non-interactive ssh command arrives with
 #   PATH=/usr/bin:/bin:/usr/sbin:/sbin
@@ -13,11 +20,29 @@
 #   command not found: docker
 # from its `docker system dial-stdio` call, which is exactly how a remote engine
 # stops working for reasons that have nothing to do with Docker. Found 2026-09-20.
-#
-# Keep this file minimal and free of side effects: it runs for every zsh, scripts
-# included. PATH only, nothing interactive, no output.
 for _p in /opt/homebrew/bin /usr/local/bin; do
   [[ -d "$_p" && ":$PATH:" != *":$_p:"* ]] && export PATH="$_p:$PATH"
 done
 unset _p
+{{- end }}
+
+# --- KUBECONFIG: a file per cluster, kept by kcx (~/.local/bin/kcx) ---
+# The state file first, where kubectl writes the current context, then the
+# permanent clusters, then the temp ones, each directory sorted: the same rule as
+# _kcx_files in kcx, whose `kcx env` prints it for shells other than zsh.
+# Recomputed for every shell, so a cluster added a minute ago is there for the next
+# command an agent runs; .zshrc also runs this before each prompt. A KUBECONFIG
+# someone set on purpose stays: only a value this function set itself (KCX_AUTO
+# holds it) is replaced, and never inside a kcx read-only shell or `kcx run`, whose
+# KUBECONFIG is the whole point of them.
+_kcx_kubeconfig_env() {
+  emulate -L zsh
+  [[ -n ${KCX_RO-} || -n ${KCX_RUN-} ]] && return 0
+  [[ -z ${KUBECONFIG-} || $KUBECONFIG == ${KCX_AUTO-} ]] || return 0
+  local LC_ALL=C
+  local -a files
+  files=( ~/.kube/config ~/.kube/configs/*.yaml(N.on) ~/.kube/temp/*.yaml(N.on) )
+  export KUBECONFIG=${(j.:.)files} KCX_AUTO=${(j.:.)files}
+}
+_kcx_kubeconfig_env
 {{ end -}}

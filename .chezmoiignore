@@ -47,10 +47,12 @@ examples
 {{- end }}
 {{- end }}
 {{ $roles := list }}{{ if hasKey . "roles" }}{{ $roles = .roles }}{{ end }}
-{{ if not (has "docker-engine" $roles) -}}
-# Only machines that other machines ssh into need a .zshenv; see the file itself
-# for why the PATH fix cannot live in .zshrc.
+{{ if ne .machine "mac-personal" -}}
+# .zshenv sets KUBECONFIG for kcx on the personal Macs, and on a lab node also the
+# PATH that ssh commands need. Kubeconfigs on wsl-work belong to its private overlay,
+# and linux-minimal runs bash. kcx itself is a personal-Mac tool for the same reason.
 .zshenv
+.local/bin/kcx
 {{- end }}
 {{ $lab := "" }}{{ if hasKey . "lab_hosts" }}{{ $lab = .lab_hosts }}{{ end }}
 {{ if not $lab -}}
