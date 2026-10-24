@@ -25,6 +25,8 @@ One templated source, three very different kinds of machine, zero drift:
 The `.zshrc` is ~85% identical between the two zsh machines; chezmoi keeps that shared core
 single-sourced and isolates the differences in clearly-labelled template blocks.
 
+Coding agents setting up a machine from this repo or a fork: read [AGENTS.md](AGENTS.md) first.
+
 ## Design principles
 
 - **One repo is the source of truth.** Live files are never edited directly;
@@ -128,8 +130,11 @@ so it cannot list something that is not actually installed.
    agents `devin`, `claude`, `codex` and `opencode`).
 3. Reload: `exec zsh`, or `exec bash -l` on linux-minimal.
 
-Forking this for yourself? Grep for `junior` and swap in your own identity,
-then follow the same flow against your fork.
+Using this for yourself? Put your own name and email in `~/.gitconfig.local`:
+`~/.gitconfig` carries the maintainer's identity and includes that file last,
+so without it your commits would carry the maintainer's name. Use this repo as
+it is, or a fork that only tracks it, and keep what is yours outside it:
+[AGENTS.md](AGENTS.md) lists where each thing goes.
 
 ## Daily workflow
 

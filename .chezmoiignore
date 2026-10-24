@@ -3,6 +3,10 @@ LICENSE
 TOOLS.md
 gen-tools.py
 bootstrap.sh
+# Instructions for coding agents that work on this repository. A ~/CLAUDE.md would
+# load into every Claude Code session started in the home folder.
+AGENTS.md
+CLAUDE.md
 # A sample private overlay to copy into a repository of its own: never applied.
 examples
 {{ if ne .machine "wsl-work" -}}
