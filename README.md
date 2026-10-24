@@ -78,7 +78,7 @@ so it cannot list something that is not actually installed.
 | `dot_config/claude-desktop/block-auto-updates.mobileconfig` | `~/.config/claude-desktop/` | mac: the configuration profile that blocks the Claude desktop app's own updater; installed once, by hand |
 | `dot_local/bin/executable_vaults` | `~/.local/bin/vaults` | one status line per Obsidian vault (changes, commits to push or pull, last commit) and `vaults pull` for all of them; POSIX sh, not on linux-minimal |
 | `dot_local/bin/executable_kcx.tmpl` | `~/.local/bin/kcx` | mac: a kubeconfig file per cluster, a context picker, temp kind clusters on any Docker engine, and a read-only shell for AI tools; see [Kubeconfigs](#kubeconfigs-kcx) |
-| `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG` for every zsh, coding agents' included; on a `docker-engine` machine also the PATH that ssh commands need |
+| `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG` and `~/.local/bin` for every zsh, coding agents' and ssh commands' included; on a `docker-engine` machine also the Homebrew PATH that ssh commands need |
 | `private_dot_ssh/private_config` | `~/.ssh/config` | WSL-only: overlay include + keepalives for stateful-firewall networks |
 | `run_onchange_install-apt-packages.sh.tmpl` | — | Declarative apt list (WSL) |
 | `run_onchange_install-krew-plugins.sh.tmpl` | — | Declarative kubectl/krew plugin list (mac and WSL; on linux-minimal only when asked for via `extras`; bootstraps krew on Linux, skips without git) |
@@ -302,7 +302,9 @@ prints it for any other shell.
 session points kubectl in all the others at a different cluster. They name the
 cluster per command instead, `kubectl --context NAME` or `kcx run NAME -- CMD`, and
 use `kcx -r` for anything that only reads. `kcx add` and `kcx temp create` never
-switch unless given `--use`.
+switch unless given `--use`. A shell that started before a cluster was added does
+not list it yet: `kcx run` works at once, and `eval "$(kcx env)"` brings the shell
+up to date.
 
 On a `docker-engine` machine `kcx add` refuses, a lab node holding no credentials;
 temp clusters are fine there. Apps started from the Dock do not see `KUBECONFIG`:

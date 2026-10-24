@@ -52,6 +52,7 @@ _kcx_presets="$HOME/.config/kind"
 _kcx_ro_methods='POST,PUT,PATCH,DELETE'
 _kcx_ro_paths='^/api/.*/pods/.*/exec,^/api/.*/pods/.*/attach,^/api/.*/pods/.*/portforward'
 _kcx_tab="$(printf '\t')"
+_kcx_inherited=""    # the KUBECONFIG of the shell that ran kcx, before kcx sets its own
 
 _kcx_err() { printf 'kcx: %s\n' "$*" >&2; }
 _kcx_die() { _kcx_err "$@"; exit 1; }
@@ -490,12 +491,22 @@ _kcx_cmd_add() {
     _kcx_import "$input" "$dest" "$name" "$ctx" "$server" 1 "$force" ""
     printf 'kcx: added %s (%s)\n' "$name" "$dest"
     a="$name"
+    _kcx_hint_new "$a" "$dest"
   else
     _kcx_import "$input" "$dest" "$name" "$ctx" "$server" 0 "$force" ""
     a="$(_kcx_contexts_in "$dest")"
     printf 'kcx: kept temp cluster %s as context %s (%s)\n' "$name" "$a" "$dest"
+    _kcx_hint_new "$a" "$dest"
   fi
   if [ "$use" = 1 ]; then _kcx_run_guard; _kcx_use "$a"; printf 'kcx: switched to %s\n' "$a"; fi
+}
+
+# A shell started before FILE existed does not list it, so kubectl --context fails
+# there with "context was not found" until its KUBECONFIG is recomputed. Agents run
+# each command in such a shell: say what works at once.
+_kcx_hint_new() {   # CONTEXT FILE
+  case ":${_kcx_inherited}:" in *":$2:"*) return 0 ;; esac
+  printf 'kcx: kcx run %s -- CMD works now; kubectl --context %s once KUBECONFIG lists the file: in a new shell, at the next zsh prompt, or after eval "$(kcx env)"\n' "$1" "$1"
 }
 
 _kcx_lab_guard() {
@@ -536,6 +547,7 @@ _kcx_cmd_mv() {
   [ "$cur" = "$old" ] && _kcx_set_current "$new"
   [ -s "$_kcx_prev" ] && [ "$(cat -- "$_kcx_prev")" = "$old" ] && ( umask 077; printf '%s' "$new" > "$_kcx_prev" )
   printf 'kcx: renamed %s to %s\n' "$old" "$new"
+  _kcx_hint_new "$new" "$dest"
 }
 
 _kcx_cmd_adopt() {
@@ -565,6 +577,7 @@ user${_kcx_tab}${us}"
   [ "$us_n" = 0 ] && [ -n "$us" ] && kubectl --kubeconfig "$_kcx_state" config delete-user "$us" >/dev/null 2>&1
   [ "$cur" = "$ctx" ] && _kcx_set_current "$name"
   printf 'kcx: %s now lives in %s as %s\n' "$ctx" "$dest" "$name"
+  _kcx_hint_new "$name" "$dest"
 }
 
 # ---- one command, one cluster ---------------------------------------------------
@@ -820,9 +833,9 @@ context${_kcx_tab}kind-$name" "" ""
     _kcx_run_guard
     _kcx_use "kind-$name"
     printf 'kcx: switched to kind-%s\n' "$name"
-  else
-    printf 'kcx: kubectl --context kind-%s ...  |  kcx run kind-%s -- CMD  |  kcx temp rm %s\n' "$name" "$name" "$name"
   fi
+  _kcx_hint_new "kind-$name" "$file"
+  printf 'kcx: kcx temp rm %s deletes it\n' "$name"
 }
 
 _kcx_presets_list() {
@@ -1012,6 +1025,7 @@ _kcx_run_guard() {
 _kcx_main() {
   # The KUBECONFIG every kubectl call here uses: recomputed from the directories,
   # except in a read-only shell or a kcx run, whose KUBECONFIG is the point of them.
+  _kcx_inherited="${KUBECONFIG-}"
   if [ -z "${KCX_RO:-}" ] && [ -z "${KCX_RUN:-}" ]; then
     KUBECONFIG="$(_kcx_kubeconfig)"
     export KUBECONFIG
