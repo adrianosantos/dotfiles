@@ -1,0 +1,10 @@
+# Work-only command-line tools. install.sh links this into ~/.config/mise/conf.d/,
+# which mise merges with the public ~/.config/mise/config.toml. A tool that file
+# already declares cannot be changed from here, because config.toml wins: name it
+# in packages.toml first, then declare the build you want here.
+#
+# A tool pinned to a download URL. `up` never upgrades these; edit the version to
+# move it.
+[tools."http:company-cli"]
+version = "1.2.3"
+url = "https://downloads.company.example/company-cli/{{version}}/company-cli-linux-amd64.tar.gz"

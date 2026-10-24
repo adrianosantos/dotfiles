@@ -70,6 +70,7 @@ so it cannot list something that is not actually installed.
 | `dot_Brewfile.tmpl` | `~/.Brewfile` | The Mac's entire toolchain, `brew bundle`-able; a machine's own `~/.Brewfile.local` is added at its end |
 | `dot_config/mise/config.toml.tmpl` | mise config | Languages everywhere; the full CLI toolchain on WSL |
 | `.chezmoitemplates/packages*` | - | A machine's own package changes, `~/.config/dotfiles/packages.toml`, applied to the Brewfile, the mise config, the installers and `up` (see [Work overlay](#work-overlay-keeping-employer-specific-bits-private)) |
+| `examples/overlay/` | - | A complete sample overlay, with placeholders, to copy into a private repository of your own; never applied |
 | `dot_config/kind/*.yaml.tmpl` | kind configs | Cluster presets: default, no-CNI, Calico (iptables/eBPF) |
 | `dot_default-python-packages` | mise | Default pip packages for every Python (on linux-minimal only with the `python` extra) |
 | `dot_local/bin/executable_tx` | `~/.local/bin/tx` | curl-only S3 file-transfer client (pairs with [s3tx](https://github.com/junior/s3tx)) |
@@ -292,7 +293,8 @@ private repository of your own. Never put it in a fork of this repo, and never
 make it public; it holds your work identity, internal host names and the names
 of internal tools. Clone it on the work machine only, to
 `~/.local/share/dotfiles-overlay`, where `up` looks for it. A layout that uses
-every include point above:
+every include point above; [examples/overlay/](examples/overlay/) holds it with
+placeholder contents, ready to copy:
 
 ```text
 dotfiles-overlay/              a PRIVATE repo, cloned to ~/.local/share/dotfiles-overlay

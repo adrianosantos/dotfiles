@@ -1,0 +1,14 @@
+# Public packages this machine does without, or gets in another build. install.sh
+# links this to ~/.config/dotfiles/packages.toml, which the public templates read at
+# every apply. Write a name as the public files spell it, or as TOOLS.md shows it
+# without a tap or backend prefix: `claude-code@latest` is the Mac's cask,
+# `claude-code` the native installer on WSL. A name this machine does not install
+# is ignored.
+
+# Public packages this machine does not install.
+skip = ["lm-studio"]
+
+# Public packages this machine gets in another build: the Brewfile installs the new
+# name in the old one's place, and `up` follows it.
+[replace]
+"claude-code@latest" = "acme/tap/claude-code"

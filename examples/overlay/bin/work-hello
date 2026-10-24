@@ -1,0 +1,11 @@
+#!/bin/sh
+# work-hello: an example command. install.sh links every file in bin/ into
+# ~/.local/bin, which is on PATH. A command here does not depend on the folder it
+# was written in, and says what it does with -h.
+case "${1:-}" in
+  -h | --help)
+    echo "usage: work-hello [NAME]   print a greeting (an example command from the overlay)"
+    exit 0
+    ;;
+esac
+echo "hello from the overlay, ${1:-$(id -un)}"

@@ -3,6 +3,8 @@ LICENSE
 TOOLS.md
 gen-tools.py
 bootstrap.sh
+# A sample private overlay to copy into a repository of its own: never applied.
+examples
 {{ if ne .machine "wsl-work" -}}
 .ssh/config
 {{- end }}

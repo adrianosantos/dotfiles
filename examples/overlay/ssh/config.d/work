@@ -1,0 +1,6 @@
+# Work hosts. install.sh links this into ~/.ssh/config.d/, which ~/.ssh/config
+# includes at its top; on a Mac the first apply after the overlay arrives adds that
+# Include line.
+Host bastion
+  HostName bastion.company.example
+  User you

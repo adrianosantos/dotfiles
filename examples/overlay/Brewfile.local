@@ -1,0 +1,11 @@
+# Homebrew packages only this machine gets (a Mac). install.sh links this to
+# ~/.Brewfile.local, and ~/.Brewfile includes it at its end, so `brew bundle --global`
+# and `up` install it with everything else. A formula or cask from a third-party tap
+# needs `trusted: true`, or Homebrew will not load it.
+
+# --- Work tools ---
+# The company tap, from the company's own git host. Homebrew installs every tap
+# first, so the company build of Claude Code that packages.toml puts in the public
+# cask's place comes from here too.
+tap "acme/tap", "https://git.company.example/acme/homebrew-tap.git"
+cask "acme/tap/vpn-client", trusted: true

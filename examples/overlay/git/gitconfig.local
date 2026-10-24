@@ -1,0 +1,5 @@
+# The work identity. install.sh links this to ~/.gitconfig.local, which the public
+# ~/.gitconfig includes last, so these values win over its personal defaults.
+[user]
+	name = Your Name
+	email = you@company.example
