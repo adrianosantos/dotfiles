@@ -1,0 +1,45 @@
+{{- /* This machine's changes to the public package lists, read from
+       ~/.config/dotfiles/packages.toml (README, "Work overlay"), as JSON:
+         {"skip": ["name", ...], "replace": {"name": "new name", ...}}
+       No file: nothing changes. A mistake in it stops the apply with a message, as an
+       unknown role does: a typo would otherwise install the very package the file was
+       written to keep off this machine. Called with the template data (.chezmoi.homeDir). */ -}}
+{{- $file := joinPath .chezmoi.homeDir ".config/dotfiles/packages.toml" -}}
+{{- $skip := list -}}
+{{- $replace := dict -}}
+{{- if lstat $file -}}
+{{-   if not (stat $file) -}}
+{{-     fail (printf "%s is a link to a file that is not there, so this machine would get the public packages it means to skip or replace. Fix the link (an overlay's install.sh makes it) or remove it." $file) -}}
+{{-   end -}}
+{{-   $t := include $file | fromToml -}}
+{{-   range $k, $v := $t -}}
+{{-     if not (has $k (list "skip" "replace")) -}}
+{{-       fail (printf "%s: unknown key %q. It takes skip, a list of names, and replace, a table of old name = new name." $file $k) -}}
+{{-     end -}}
+{{-   end -}}
+{{-   if hasKey $t "skip" -}}
+{{-     if not (kindIs "slice" $t.skip) -}}
+{{-       fail (printf "%s: skip must be a list of names, for example skip = [\"lm-studio\"]." $file) -}}
+{{-     end -}}
+{{-     $skip = $t.skip -}}
+{{-   end -}}
+{{-   if hasKey $t "replace" -}}
+{{-     if not (kindIs "map" $t.replace) -}}
+{{-       fail (printf "%s: replace must be a table of old name = new name, under a [replace] line." $file) -}}
+{{-     end -}}
+{{-     $replace = $t.replace -}}
+{{-   end -}}
+{{-   range $n := concat $skip (keys $replace) (values $replace) -}}
+{{-     $ok := false -}}
+{{-     if kindIs "string" $n }}{{ $ok = regexMatch `^[A-Za-z0-9][A-Za-z0-9@._+/:-]*$` $n }}{{ end -}}
+{{-     if not $ok -}}
+{{-       fail (printf "%s: %v is not a package name." $file $n) -}}
+{{-     end -}}
+{{-   end -}}
+{{-   range $n := $skip -}}
+{{-     if hasKey $replace $n -}}
+{{-       fail (printf "%s: %s is both skipped and replaced; keep one of the two." $file $n) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- dict "skip" $skip "replace" $replace | toJson -}}

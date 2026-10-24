@@ -1,0 +1,66 @@
+{{- /* A package list with this machine's own changes (README, "Work overlay").
+       dot_Brewfile.tmpl and the mise config call it with their own source path
+       ("file") and "format" (brew or mise). It renders that file again with
+       packages_raw set, which gives the list as written, and goes through it line by
+       line with the names in ~/.config/dotfiles/packages.toml:
+       - a skipped entry becomes a comment saying so;
+       - a replaced Brewfile entry keeps its place, kind, options and comment under the
+         new name, and a tap-qualified new name gets `trusted: true`, the Brewfile's way
+         to let Homebrew load a third-party tap;
+       - a replaced mise tool is left out like a skipped one: config.toml wins over
+         conf.d, so the overlay's conf.d can declare the new tool only where this file
+         says nothing.
+       The Brewfile then gets ~/.Brewfile.local at its end, under a header of its own
+       so `tools` counts it. With neither file the text comes back byte for byte. */ -}}
+{{- $d := .data -}}
+{{- $text := includeTemplate .file (merge (dict "packages_raw" true) $d) -}}
+{{- $pk := includeTemplate "packages" $d | fromJson -}}
+{{- $src := "~/.config/dotfiles/packages.toml" -}}
+{{- if or $pk.skip $pk.replace -}}
+{{-   $lines := list -}}
+{{-   $section := "" -}}
+{{-   range $line := splitList "\n" $text -}}
+{{-     $kind := "" -}}
+{{-     $name := "" -}}
+{{-     if eq $.format "brew" -}}
+{{-       if regexMatch `^(brew|cask) "[^"]+"` $line -}}
+{{-         $kind = regexReplaceAll `^(brew|cask) .*$` $line "${1}" -}}
+{{-         $name = regexReplaceAll `^(?:brew|cask) "([^"]+)".*$` $line "${1}" -}}
+{{-       end -}}
+{{-     else -}}
+{{-       if hasPrefix "[" $line }}{{ $section = trim $line }}{{ end -}}
+{{-       if and (eq $section "[tools]") (regexMatch `^"?[A-Za-z0-9_.:@/+-]+"?\s*=` $line) -}}
+{{-         $name = regexReplaceAll `^"?([A-Za-z0-9_.:@/+-]+?)"?\s*=.*$` $line "${1}" -}}
+{{-       end -}}
+{{-     end -}}
+{{-     $new := $name -}}
+{{-     if $name }}{{ $new = includeTemplate "package" (dict "names" $name "pk" $pk) }}{{ end -}}
+{{-     if eq $new $name -}}
+{{-       $lines = append $lines $line -}}
+{{-     else if not $new -}}
+{{-       $lines = append $lines (printf "# skipped by %s: %s" $src $line) -}}
+{{-     else if eq $.format "brew" -}}
+{{-       $trust := "" -}}
+{{-       if regexMatch `^[^/]+/[^/]+/[^/]+$` $new }}{{ $trust = ", trusted: true" }}{{ end -}}
+{{-       $rest := regexReplaceAll `^(?:brew|cask) "[^"]+"` $line "" -}}
+{{-       $lines = append $lines (printf "# replaced by %s: %s" $src $line) -}}
+{{-       $lines = append $lines (printf "%s %q%s%s" $kind $new $trust $rest) -}}
+{{-     else -}}
+{{-       $lines = append $lines (printf "# replaced by %s with %s: %s" $src $new $line) -}}
+{{-     end -}}
+{{-   end -}}
+{{-   $text = join "\n" $lines -}}
+{{- end -}}
+{{- if and (eq .format "brew") (trim $text) -}}
+{{-   $local := joinPath $d.chezmoi.homeDir ".Brewfile.local" -}}
+{{-   if lstat $local -}}
+{{-     if not (stat $local) -}}
+{{-       fail (printf "%s is a link to a file that is not there. Fix the link (an overlay's install.sh makes it) or remove it." $local) -}}
+{{-     end -}}
+{{-     $more := regexReplaceAll `\s+$` (include $local) "" -}}
+{{-     if $more -}}
+{{-       $text = printf "%s\n# --- This machine: ~/.Brewfile.local ---\n%s\n" $text $more -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- $text -}}

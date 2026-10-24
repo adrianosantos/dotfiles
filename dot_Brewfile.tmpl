@@ -1,3 +1,13 @@
+{{- /* A machine's own packages (README, "Work overlay"): ~/.config/dotfiles/packages.toml
+       may skip or replace entries below, and ~/.Brewfile.local is added at the end. The
+       packages-filter template applies them to this file's own text, which it gets by
+       rendering this file again with packages_raw set. With neither file the output is
+       the list exactly as written. That second pass reads the file from the source
+       directory, so rendering a copy over stdin (an older one from `git archive`, say)
+       needs --source pointing at the copy's tree. */ -}}
+{{- if not (hasKey . "packages_raw") -}}
+{{-   includeTemplate "packages-filter" (dict "file" "dot_Brewfile.tmpl" "format" "brew" "data" .) | trimSuffix "\n" -}}
+{{- else -}}
 {{- if eq .machine "mac-personal" -}}
 {{- $lab := false -}}{{- if hasKey . "roles" }}{{ $lab = has "docker-engine" .roles }}{{ end -}}
 {{- /* An INTEL Mac. Homebrew stopped building Intel bottles in September 2026, so a
@@ -243,5 +253,6 @@ cask "lm-studio"
 
 # --- Casks: fonts ---
 cask "font-meslo-lg-nerd-font"
+{{- end }}
 {{- end }}
 {{- end }}

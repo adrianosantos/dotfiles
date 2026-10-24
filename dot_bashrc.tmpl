@@ -192,20 +192,14 @@ done
 unset _f
 
 # --- keeping it current --------------------------------------------------------
-# up: pull the dotfiles, regenerate the config (a changed config template needs
-# `chezmoi init`, which `chezmoi update` alone does not do), apply, then bring the
-# tools up to date. mise itself is NOT self-updated here: its version is pinned in
-# the dotfiles and the installer would put the pin back; bump the pin instead.
+# up: sync the private overlay where there is one, pull the dotfiles, regenerate the
+# config (a changed config template needs `chezmoi init`, which `chezmoi update`
+# alone does not do), apply, then bring the tools up to date. The overlay comes
+# first so the apply reads its package changes (~/.config/dotfiles/packages.toml).
+# mise itself is NOT self-updated here: its version is pinned in the dotfiles and
+# the installer would put the pin back; bump the pin instead.
 up() {
   local src; src=$(chezmoi source-path 2>/dev/null) || { echo "up: chezmoi is not set up here" >&2; return 1; }
-  if command -v git >/dev/null 2>&1 && [ -d "$src/.git" ]; then
-    echo "== dotfiles: pull"
-    chezmoi git pull -- --ff-only || return
-  else
-    echo "== dotfiles: no git on this host, applying the source as it stands (refresh it over tx)"
-  fi
-  echo "== dotfiles: regenerate config + apply"
-  chezmoi init --apply || return
   if [ -d ~/.local/share/dotfiles-overlay/.git ]; then       # private layer, where present
     local _ovhost
     _ovhost=$(git -C ~/.local/share/dotfiles-overlay remote get-url origin 2>/dev/null       | sed -E 's#^[a-z]+://##; s#^[^@]*@##; s#[:/].*##')
@@ -216,6 +210,14 @@ up() {
       echo "up: overlay host '${_ovhost:-?}' unreachable, skipping"
     fi
   fi
+  if command -v git >/dev/null 2>&1 && [ -d "$src/.git" ]; then
+    echo "== dotfiles: pull"
+    chezmoi git pull -- --ff-only || return
+  else
+    echo "== dotfiles: no git on this host, applying the source as it stands (refresh it over tx)"
+  fi
+  echo "== dotfiles: regenerate config + apply"
+  chezmoi init --apply || return
   # Tools: say only what changed. mise and krew both narrate every tool they
   # looked at; a snapshot before and after tells the real story in two lines.
   if command -v mise >/dev/null 2>&1; then

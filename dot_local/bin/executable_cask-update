@@ -21,11 +21,12 @@
 # ask once to let the terminal modify apps (System Settings > Privacy & Security >
 # App Management), and a cask that installs root-owned parts (installer packages,
 # privileged helpers) asks for a password while it upgrades. `cask-update claude`
-# refuses to run inside the Claude desktop app: quitting the app would end the
-# session it runs in.
+# refuses to run inside the Claude desktop app, and so does any cask that installs
+# that app: quitting the app would end the session it runs in.
 set -eu
 
 APPDIR="${CASK_UPDATE_APPDIR:-/Applications}"
+CLAUDE_APP_ID=com.anthropic.claudefordesktop
 YES=""
 CHECK=""
 
@@ -80,15 +81,18 @@ update_one() {  # token, cask version, app
   local tok=$1 want=$2 app=$3 path have id bin answer i running="" was_pinned="" status=0
   path=$(app_path "$app") || { echo "cask-update: $tok: its app, $app, is in neither $APPDIR nor ~/Applications" >&2; return 1; }
   have=$(plist "$path" CFBundleShortVersionString)
+  id=$(plist "$path" CFBundleIdentifier)
   if [ -n "$have" ] && [ "$want" != latest ] && ! behind "$have" "$want"; then
     echo "$tok: ${app%.app} $have is current (the cask has $want)."
     return 0
   fi
-  if [ "$tok" = claude ] && { [ "${CLAUDE_CODE_ENTRYPOINT:-}" = claude-desktop ] || [ -n "${CLAUDE_CODE_DESKTOP_APP_VERSION:-}" ]; }; then
-    die "claude: this shell runs inside the Claude desktop app, and updating it quits the app. Run it in Terminal or Ghostty."
+  # The Claude desktop app is known by its bundle id, not by its cask's token, so this
+  # holds whichever cask installed it: a machine's packages.toml may replace `claude`.
+  if [ "$id" = "$CLAUDE_APP_ID" ] && { [ "${CLAUDE_CODE_ENTRYPOINT:-}" = claude-desktop ] || [ -n "${CLAUDE_CODE_DESKTOP_APP_VERSION:-}" ]; }; then
+    die "$tok: this shell runs inside the Claude desktop app, and updating it quits the app. Run it in Terminal or Ghostty."
   fi
   echo "$tok: ${app%.app} ${have:-?} -> $want."
-  if [ "$tok" = claude ]; then
+  if [ "$id" = "$CLAUDE_APP_ID" ]; then
     echo "Updating quits the app: every Code session stops, and Remote Control comes back for"
     echo "a session when it gets a message."
   fi
@@ -102,7 +106,6 @@ update_one() {  # token, cask version, app
   bin="$path/Contents/MacOS/"
   if pgrep -f "$bin" >/dev/null 2>&1; then
     running=1
-    id=$(plist "$path" CFBundleIdentifier)
     osascript -e "quit app id \"$id\"" >/dev/null 2>&1 || true
     i=0
     while pgrep -f "$bin" >/dev/null 2>&1 && [ "$i" -lt 30 ]; do sleep 1; i=$((i + 1)); done

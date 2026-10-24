@@ -3,6 +3,9 @@
 {{- if eq .machine "linux-minimal" -}}
 {{-   if hasKey . "extras" }}{{ if has "claude" (regexSplit "\\s*,\\s*" (trim .extras) -1) }}{{ $want = true }}{{ end }}{{ end -}}
 {{- end -}}
+{{- /* Not on a machine whose packages.toml skips or replaces claude-code (README, "Work
+       overlay"): its overlay installs the build it wants instead. */ -}}
+{{- if ne (includeTemplate "package" (dict "names" "claude-code" "data" .)) "claude-code" }}{{ $want = false }}{{ end -}}
 {{- $big := "" -}}{{- if hasKey . "bigdisk" }}{{ $big = .bigdisk }}{{ end -}}
 {{- if $want -}}
 #!/usr/bin/env bash

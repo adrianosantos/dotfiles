@@ -328,6 +328,36 @@ chezconf() {
 }
 
 up() {
+  # The private overlay FIRST, where there is one (work machines): pull it and re-link
+  # its fragments, so the apply below already reads its package changes
+  # (~/.config/dotfiles/packages.toml, ~/.Brewfile.local) and mise its conf.d.
+  if [[ -d ~/.local/share/dotfiles-overlay/.git ]]; then
+    # The overlay lives on a corp-internal host. When it can't be reached (VPN
+    # down, or the corp VPN's posture/compliance check blocking corp resources until
+    # a pending OS update is installed), the pull would otherwise hang ~2min on a TCP
+    # timeout. So: skip unless the host RESOLVES, and cap the connect at 5s. Host
+    # is derived from the remote to keep this file employer-neutral.
+    local _ovhost _ovaddr=
+    _ovhost=$(git -C ~/.local/share/dotfiles-overlay remote get-url origin 2>/dev/null \
+      | sed -E 's#^[a-z]+://##; s#^[^@]*@##; s#[:/].*##')
+    # getent answers on Linux. macOS has none, and the getent that zsh's compinit
+    # defines there reads only /etc/hosts, so ask the system resolver, which also
+    # follows a VPN's split DNS. dscacheutil exits 0 either way: its output answers.
+    if [[ -n "$_ovhost" ]]; then
+      if (( $+commands[getent] )); then
+        _ovaddr=$(command getent hosts "$_ovhost" 2>/dev/null)
+      else
+        _ovaddr=$(dscacheutil -q host -a name "$_ovhost" 2>/dev/null | grep address)
+      fi
+    fi
+    if [[ -n "$_ovaddr" ]]; then
+      GIT_SSH_COMMAND='ssh -o ConnectTimeout=5 -o BatchMode=yes' \
+        git -C ~/.local/share/dotfiles-overlay pull --rebase --autostash && \
+        ~/.local/share/dotfiles-overlay/install.sh
+    else
+      echo "up: overlay host '${_ovhost:-?}' unreachable, skipping overlay sync (VPN down or corp access blocked?)"
+    fi
+  fi
   # Keep chezmoi's stderr visible, but also look at it: the "config file
   # template has changed" warning is the moment you need to see your current
   # answers, not three commands later.
@@ -346,27 +376,26 @@ up() {
     echo
   fi
   rm -f "$_cmerr"
-  # Sync the private overlay if present (work machines only): pull + re-link
-  # fragments so conf.d / gitconfig.local / ssh are current before mise reads them.
-  if [[ -d ~/.local/share/dotfiles-overlay/.git ]]; then
-    # The overlay lives on a corp-internal host. When it can't be reached — VPN
-    # down, or the corp VPN's posture/compliance check blocking corp resources until
-    # a pending OS update is installed — the pull would otherwise hang ~2min on a TCP
-    # timeout. So: skip unless the host RESOLVES, and cap the connect at 5s. Host
-    # is derived from the remote to keep this file employer-neutral.
-    local _ovhost
-    _ovhost=$(git -C ~/.local/share/dotfiles-overlay remote get-url origin 2>/dev/null \
-      | sed -E 's#^[a-z]+://##; s#^[^@]*@##; s#[:/].*##')
-    if [[ -n "$_ovhost" ]] && getent hosts "$_ovhost" &>/dev/null; then
-      GIT_SSH_COMMAND='ssh -o ConnectTimeout=5 -o BatchMode=yes' \
-        git -C ~/.local/share/dotfiles-overlay pull --rebase --autostash && \
-        ~/.local/share/dotfiles-overlay/install.sh
-    else
-      echo "up: overlay host '${_ovhost:-?}' unreachable — skipping overlay sync (VPN down or corp access blocked?)"
-    fi
-  fi
-  local _cc_before=$(brew list --cask --versions claude-code@latest 2>/dev/null)
+  # Claude Code's cask: claude-code@latest, or what this machine's packages.toml
+  # replaces it with (empty when it skips it). The Remote Control restart at the end
+  # follows it.
+  local _cc_cask={{ includeTemplate "package" (dict "names" "claude-code@latest" "data" . "tokens" true) | squote }} _cc_before=
+  [[ -n "$_cc_cask" ]] && _cc_before=$(brew list --cask --versions "$_cc_cask" 2>/dev/null)
   if command -v brew &>/dev/null; then
+    # A package this machine skips or replaces (a "# skipped by" or "# replaced by"
+    # line in ~/.Brewfile) can still be installed from before: brew bundle never
+    # removes anything, and a leftover can block its replacement (two casks that link
+    # the same command clash). Say so, with the command; removing it is yours.
+    local _kind _name _rm
+    sed -nE 's/^# (skipped|replaced) by [^:]*: (brew|cask) "([^"]+)".*/\2 \3/p' ~/.Brewfile 2>/dev/null \
+      | while read -r _kind _name; do
+          [[ $_kind == brew ]] && _kind=formula
+          _name=${_name##*/}
+          brew list --$_kind "$_name" &>/dev/null || continue
+          _rm="brew uninstall --$_kind $_name"
+          brew list --$_kind --pinned 2>/dev/null | grep -qx "$_name" && _rm="brew unpin --$_kind $_name && $_rm"
+          echo "up: $_name is installed, but this machine skips or replaces it (~/.config/dotfiles/packages.toml). Remove it with: $_rm"
+        done
     # `brew bundle` prints one "Using <x>" line per already-satisfied entry —
     # over a hundred lines that say nothing happened. Keep everything it did do,
     # drop the roll-call, and let the category summary below carry the shape of
@@ -416,10 +445,10 @@ up() {
   # on purpose: when `up` itself runs inside a Remote Control session the restart
   # ends that session, so everything else must already be finished.
   if [[ -n "$_cc_before" ]]; then
-    local _cc_after=$(brew list --cask --versions claude-code@latest 2>/dev/null)
+    local _cc_after=$(brew list --cask --versions "$_cc_cask" 2>/dev/null)
     local _rc="gui/$UID/${CLAUDE_RC_LABEL:-local.claude-remote-control}"
     if [[ "$_cc_after" != "$_cc_before" ]] && launchctl print "$_rc" &>/dev/null; then
-      echo "up: claude-code ${_cc_before##* } -> ${_cc_after##* }: restarting the Remote Control server${CLAUDECODE:+ (this session is hosted by it and will drop; reconnect in about 30s)}"
+      echo "up: $_cc_cask ${_cc_before##* } -> ${_cc_after##* }: restarting the Remote Control server${CLAUDECODE:+ (this session is hosted by it and will drop; reconnect in about 30s)}"
       launchctl kickstart -k "$_rc"
     fi
   fi

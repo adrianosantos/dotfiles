@@ -4,6 +4,9 @@
 {{- if eq .machine "linux-minimal" -}}
 {{-   if hasKey . "extras" }}{{ if has "devin" (regexSplit "\\s*,\\s*" (trim .extras) -1) }}{{ $want = true }}{{ end }}{{ end -}}
 {{- end -}}
+{{- /* Not on a machine whose packages.toml skips or replaces devin (README, "Work
+       overlay"): its overlay installs the build it wants instead. */ -}}
+{{- if ne (includeTemplate "package" (dict "names" "devin" "data" .)) "devin" }}{{ $want = false }}{{ end -}}
 {{- if $want -}}
 #!/bin/bash
 # Install the Devin CLI where it is missing.

@@ -12,20 +12,26 @@ which names the upstream repository.
 
 Usage:  ./gen-tools.py [--check]     (--check exits 1 if TOOLS.md is stale)
 """
-import json, os, re, subprocess, sys, urllib.request
+import json, os, re, subprocess, sys, tempfile, urllib.request
 
 SRC = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.expanduser("~/Library/Caches/Homebrew/api")
 
 
 def render(path, machine):
-    """Render a chezmoi template as it would apply on `machine`."""
+    """Render a chezmoi template as it would apply on `machine`.
+
+    HOME is an empty folder for the render, so a machine's own package changes
+    (~/.config/dotfiles/packages.toml, ~/.Brewfile.local) never reach TOOLS.md.
+    """
     cfg = f"/tmp/.gen-tools-{machine}.toml"
     with open(cfg, "w") as fh:
         fh.write(f'[data]\nmachine = "{machine}"\n')
-    out = subprocess.run(
-        ["chezmoi", "--config", cfg, "--source", SRC, "execute-template"],
-        stdin=open(os.path.join(SRC, path)), capture_output=True, text=True)
+    with tempfile.TemporaryDirectory() as home:
+        out = subprocess.run(
+            ["chezmoi", "--config", cfg, "--source", SRC, "execute-template"],
+            stdin=open(os.path.join(SRC, path)), capture_output=True, text=True,
+            env=dict(os.environ, HOME=home))
     os.unlink(cfg)
     if out.returncode:
         sys.exit(f"render failed for {path} ({machine}): {out.stderr.strip()}")

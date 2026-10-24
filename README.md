@@ -67,8 +67,9 @@ so it cannot list something that is not actually installed.
 | `dot_inputrc.tmpl`, `dot_vimrc.tmpl`, `dot_tmux.conf.tmpl` | `~/.inputrc` … | linux-minimal only: readline, vim paste toggle, a tmux config generated for the installed tmux version |
 | `dot_config/bash/bc-compat.bash.tmpl` | shim | Stand-ins for the bash-completion helpers kubectl/helm completions expect |
 | `dot_p10k.zsh` | `~/.p10k.zsh` | Powerlevel10k prompt (plain file) |
-| `dot_Brewfile.tmpl` | `~/.Brewfile` | The Mac's entire toolchain, `brew bundle`-able |
+| `dot_Brewfile.tmpl` | `~/.Brewfile` | The Mac's entire toolchain, `brew bundle`-able; a machine's own `~/.Brewfile.local` is added at its end |
 | `dot_config/mise/config.toml.tmpl` | mise config | Languages everywhere; the full CLI toolchain on WSL |
+| `.chezmoitemplates/packages*` | - | A machine's own package changes, `~/.config/dotfiles/packages.toml`, applied to the Brewfile, the mise config, the installers and `up` (see [Work overlay](#work-overlay-keeping-employer-specific-bits-private)) |
 | `dot_config/kind/*.yaml.tmpl` | kind configs | Cluster presets: default, no-CNI, Calico (iptables/eBPF) |
 | `dot_default-python-packages` | mise | Default pip packages for every Python (on linux-minimal only with the `python` extra) |
 | `dot_local/bin/executable_tx` | `~/.local/bin/tx` | curl-only S3 file-transfer client (pairs with [s3tx](https://github.com/junior/s3tx)) |
@@ -208,8 +209,8 @@ What it does differently:
   you sit at needs a Nerd Font to draw them. Without one, put an `ls` alias
   without `--icons` in `~/.config/bash/local.bash`, which is sourced last.
 
-Daily use is one command, `up`: pull, regenerate the config, apply, sync the
-private overlay if present, update mise tools and krew plugins, then print the
+Daily use is one command, `up`: sync the private overlay if present, pull,
+regenerate the config, apply, update mise tools and krew plugins, then print the
 toolchain by category and `footprint`, what the setup occupies and where. It
 reports only what changed; a run where nothing moved prints "all current".
 mise itself is pinned in the repo rather than self-updated, so upgrading it
@@ -270,6 +271,9 @@ clonable by anyone:
 | git identity | personal default | `~/.gitconfig.local` (via `[include]`) |
 | ssh hosts | `Include ~/.ssh/config.d/*` | files in `~/.ssh/config.d/` |
 | shell | sources `~/.config/zsh/local.d/*.zsh` | files in `~/.config/zsh/local.d/` |
+| commands | `~/.local/bin` is on `PATH` | links in `~/.local/bin/` |
+| Homebrew (Mac) | `~/.Brewfile` | `~/.Brewfile.local`, added at the end of `~/.Brewfile` |
+| public packages | everything in [TOOLS.md](TOOLS.md) | `~/.config/dotfiles/packages.toml`: skip one, or replace it with another build |
 
 The overlay is a plain repo with an `install.sh` that symlinks its fragments
 into those paths; an `up` shell function keeps everything (core, overlay,
@@ -280,6 +284,107 @@ It works the same on a work Mac as on WSL. On a Mac, `~/.ssh/config` stays your
 own file: once an overlay sits at `~/.local/share/dotfiles-overlay`, the next
 apply adds `Include ~/.ssh/config.d/*` at its top, keeping a backup, so the
 overlay's hosts are read.
+
+### Starting an overlay
+
+Keep the overlay in a **private** repository: on your employer's git host, or a
+private repository of your own. Never put it in a fork of this repo, and never
+make it public; it holds your work identity, internal host names and the names
+of internal tools. Clone it on the work machine only, to
+`~/.local/share/dotfiles-overlay`, where `up` looks for it. A layout that uses
+every include point above:
+
+```text
+dotfiles-overlay/              a PRIVATE repo, cloned to ~/.local/share/dotfiles-overlay
+|-- install.sh                 links everything below into place; up runs it
+|-- git/gitconfig.local        -> ~/.gitconfig.local                     work name and email
+|-- zsh/work.zsh               -> ~/.config/zsh/local.d/work.zsh         work aliases, environment
+|-- mise/conf.d/work.toml      -> ~/.config/mise/conf.d/work.toml        work-only CLI tools
+|-- ssh/config.d/work          -> ~/.ssh/config.d/work                   work hosts
+|-- bin/                       -> ~/.local/bin/, one link per file       work scripts
+|-- packages.toml              -> ~/.config/dotfiles/packages.toml       public packages to skip or replace
+`-- Brewfile.local             -> ~/.Brewfile.local                      extra Homebrew packages (Mac)
+```
+
+Leave out what you do not need. A minimal `install.sh`:
+
+```sh
+#!/bin/sh
+# Link this overlay's pieces where the public dotfiles read them. `up` runs it
+# after every pull, so it is safe to run again, and it never replaces a real file.
+set -eu
+here=$(cd "$(dirname "$0")" && pwd)
+
+link() {  # link SOURCE TARGET; SOURCE is relative to this repo, skipped when absent
+  [ -e "$here/$1" ] || return 0
+  if [ -e "$2" ] && [ ! -L "$2" ]; then
+    echo "install.sh: $2 is a real file, left as it is" >&2
+    return 0
+  fi
+  mkdir -p "$(dirname "$2")"
+  ln -sfn "$here/$1" "$2"
+}
+
+link git/gitconfig.local "$HOME/.gitconfig.local"
+link packages.toml       "$HOME/.config/dotfiles/packages.toml"
+link Brewfile.local      "$HOME/.Brewfile.local"
+for pair in zsh:.config/zsh/local.d mise/conf.d:.config/mise/conf.d \
+            ssh/config.d:.ssh/config.d bin:.local/bin; do
+  for f in "$here/${pair%%:*}"/*; do
+    link "${pair%%:*}/${f##*/}" "$HOME/${pair#*:}/${f##*/}"
+  done
+done
+```
+
+### Replacing or skipping a public package
+
+A work Mac may have to install a company build of a tool instead of the public
+cask; Claude Code is the usual case. The overlay says so in its
+`packages.toml`:
+
+```toml
+# Public packages this machine does not install.
+skip = ["lm-studio"]
+
+# Public packages this machine gets in another build.
+[replace]
+"claude-code@latest" = "acme/tap/claude-code"
+```
+
+At the next apply, `~/.Brewfile` has `cask "acme/tap/claude-code", trusted:
+true` where `cask "claude-code@latest"` was, with a comment line saying what
+changed (`trusted: true` is how a Brewfile lets Homebrew load a cask from a
+third-party tap). `up` follows the new cask too: after it upgrades, `up`
+restarts a Remote Control server that runs from it, and a replaced cask that
+was pinned is pinned under its new name.
+
+- **Names** are the ones the public files use, or the ones TOOLS.md shows,
+  without a tap or backend prefix: `claude-code@latest` is the Mac's cask,
+  `claude-code` the native installer on WSL and linux-minimal, and `opencode`
+  and `github:anomalyco/opencode` are the same tool. A name the machine does
+  not install is ignored, so one file can serve several machines.
+- **In the mise config** a replaced tool is left out, like a skipped one:
+  declare its replacement in the overlay's `mise/conf.d`. It has to be that way
+  round, because when the same tool is in both files, mise takes
+  `config.toml`'s.
+- **The installers** of Claude Code, the Devin CLI, sbx, bpftool and ble.sh
+  step aside for a name that is skipped or replaced; the overlay installs its
+  own build, from `install.sh`, `bin/` or mise conf.d.
+- **Additions** need no entry here: Homebrew packages go in `Brewfile.local`,
+  command-line tools in mise conf.d.
+- **A mistake stops the apply** with a message: an unknown key, a malformed
+  name, a name both skipped and replaced, a link whose file is gone (each named
+  with the file), or broken TOML (named with its line). Ignored, a typo would
+  install the very package the file was written to keep off the machine.
+
+On a new machine, clone the overlay and run its `install.sh` before the first
+`chezmoi init --apply` or `up`, so the first `~/.Brewfile` already has the
+replacement. After that, `up` syncs the overlay before it applies the dotfiles,
+so a change to `packages.toml` takes effect in the same run. Nothing is ever
+uninstalled for you: a public package installed before the overlay arrived
+stays, and `up` names it, with the command that removes it. The apt, krew and
+docker-plugin lists, mise itself, and the npm and Python default packages do not
+read `packages.toml`.
 
 ## Bootstrapping a brand-new repo from this layout
 

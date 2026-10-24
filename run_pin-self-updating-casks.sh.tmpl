@@ -36,7 +36,10 @@ set -eu
 # prompt: by default a bare `brew upgrade` also upgrades an auto_updates cask
 # whose app is older than the cask, and Wireshark's updater runs only while the
 # app does. Upgrading this cask reinstalls its two installer packages, as root.
-PINNED=(1password claude docker-desktop forklift google-chrome google-chrome@canary obsidian wireshark-app)
+{{- /* Each name goes through this machine's packages.toml (README, "Work overlay"): a
+       cask it skips is left out, one it replaces is pinned under the replacement's
+       token. With no such file the list is exactly the one written here. */}}
+PINNED=({{ includeTemplate "package" (dict "names" "1password claude docker-desktop forklift google-chrome google-chrome@canary obsidian wireshark-app" "data" . "tokens" true) }})
 
 command -v brew >/dev/null 2>&1 || exit 0
 

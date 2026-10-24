@@ -1,4 +1,8 @@
-{{ if eq .machine "wsl-work" -}}
+{{- /* wsl-work, except a machine whose packages.toml skips or replaces sbx (README,
+       "Work overlay"). */ -}}
+{{- $want := eq .machine "wsl-work" -}}
+{{- if ne (includeTemplate "package" (dict "names" "sbx" "data" .)) "sbx" }}{{ $want = false }}{{ end -}}
+{{ if $want -}}
 #!/usr/bin/env bash
 # tools-category: AI / agents
 # tools-installs: sbx

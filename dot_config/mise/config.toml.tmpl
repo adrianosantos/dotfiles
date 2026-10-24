@@ -1,3 +1,13 @@
+{{- /* A machine's own packages (README, "Work overlay"): ~/.config/dotfiles/packages.toml
+       may skip or replace tools below; a replaced one is left out, and the overlay's
+       ~/.config/mise/conf.d declares the new one. The packages-filter template applies
+       this to the file's own text, which it gets by rendering this file again with
+       packages_raw set. With no such file the output is the config exactly as written.
+       That second pass reads the file from the source directory, so rendering a copy
+       over stdin needs --source pointing at the copy's tree. */ -}}
+{{- if not (hasKey . "packages_raw") -}}
+{{-   includeTemplate "packages-filter" (dict "file" "dot_config/mise/config.toml.tmpl" "format" "mise" "data" .) | trimSuffix "\n" -}}
+{{- else -}}
 # mise global config — managed by chezmoi
 # Shared: language runtimes with per-project version sensitivity.
 # Per-machine: WSL uses mise for the full toolchain (no Homebrew there);
@@ -202,5 +212,6 @@ codex     = "latest"
 # are linked against musl, whose loader a glibc host lacks, and baseline needs no
 # AVX2, which some virtual CPUs hide. Sign in with `opencode auth login`.
 "github:anomalyco/opencode" = { version = "latest", asset_pattern = "opencode-linux-{{ if eq .chezmoi.arch "arm64" }}arm64{{ else }}x64-baseline{{ end }}.tar.gz" }
+{{- end }}
 {{- end }}
 {{- end }}

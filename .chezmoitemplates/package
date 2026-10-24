@@ -1,0 +1,30 @@
+{{- /* Each public name in .names (space-separated) through this machine's
+       packages.toml: kept as it is, swapped for its replacement, or dropped when the
+       machine skips it; the result is space-separated too. A name is matched as the
+       public files write it or as TOOLS.md shows it, without a tap or backend prefix
+       (docker/tap/sbx or sbx, github:anomalyco/opencode or opencode); the name as
+       written is tried first. With "tokens", a replacement loses its tap, for the brew
+       commands that take a cask token. Pass the template data as "data", or the parsed
+       changes as "pk" when calling this many times. */ -}}
+{{- $pk := dict -}}
+{{- if hasKey . "pk" }}{{ $pk = .pk }}{{ else }}{{ $pk = includeTemplate "packages" .data | fromJson }}{{ end -}}
+{{- $tokens := false }}{{ if hasKey . "tokens" }}{{ $tokens = .tokens }}{{ end -}}
+{{- $out := list -}}
+{{- range $n := splitList " " .names -}}
+{{-   if $n -}}
+{{-     $new := $n -}}
+{{-     $found := false -}}
+{{-     range $k := list $n (regexReplaceAll `^.*[/:]` $n "") -}}
+{{-       if not $found -}}
+{{-         if has $k $pk.skip -}}
+{{-           $new = "" }}{{ $found = true -}}
+{{-         else if hasKey $pk.replace $k -}}
+{{-           $new = index $pk.replace $k }}{{ $found = true -}}
+{{-           if $tokens }}{{ $new = regexReplaceAll `^.*/` $new "" }}{{ end -}}
+{{-         end -}}
+{{-       end -}}
+{{-     end -}}
+{{-     if $new }}{{ $out = append $out $new }}{{ end -}}
+{{-   end -}}
+{{- end -}}
+{{- join " " $out -}}

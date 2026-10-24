@@ -4,6 +4,8 @@
 {{- if eq .machine "linux-minimal" -}}
 {{-   if hasKey . "extras" }}{{ if has "blesh" (regexSplit "\\s*,\\s*" .extras -1) }}{{ $want = true }}{{ end }}{{ end -}}
 {{- end -}}
+{{- /* Not on a machine whose packages.toml skips or replaces blesh (README, "Work overlay"). */ -}}
+{{- if ne (includeTemplate "package" (dict "names" "blesh" "data" .)) "blesh" }}{{ $want = false }}{{ end -}}
 {{- if $want -}}
 #!/bin/sh
 # tools-category: Dev utilities

@@ -15,6 +15,10 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y bpftrace bpfcc-tools
 # matches the WSL2 kernel, and the upstream tarball ships the binary without
 # an exec bit (defeats mise's bin detection) — so install it here system-wide.
 # /usr/local/bin is in sudo's secure_path, so plain `sudo bpftool` works.
+{{- /* Left out on a machine whose packages.toml skips or replaces bpftool (README,
+       "Work overlay"). A template comment, so this script's text, which decides when
+       it runs again, is unchanged everywhere else. */ -}}
+{{- if eq (includeTemplate "package" (dict "names" "bpftool" "data" .)) "bpftool" }}
 BPFTOOL_VERSION=7.7.0
 if [[ "$(bpftool version 2>/dev/null | head -1)" != *"v${BPFTOOL_VERSION}"* ]]; then
   echo ">>> installing bpftool v${BPFTOOL_VERSION} to /usr/local/bin"
@@ -23,6 +27,7 @@ if [[ "$(bpftool version 2>/dev/null | head -1)" != *"v${BPFTOOL_VERSION}"* ]]; 
   sudo install -m 0755 "$tmp/bpftool" /usr/local/bin/bpftool
   rm -rf "$tmp"
 fi
+{{- end }}
 
 # Persistent BPF filesystem — needed for program/map pinning (Cilium/Calico,
 # bpftool prog pin). WSL processes /etc/fstab at distro boot (mountFsTab=true).
