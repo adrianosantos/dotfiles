@@ -38,10 +38,11 @@ Coding agents setting up a machine from this repo or a fork: read [AGENTS.md](AG
   minimal Linux profile, which additionally forbids itself anything that needs
   root or a package manager. Tools declare where they live — nothing is
   installed ad hoc.
-- **Declarative, idempotent provisioning.** apt packages, krew plugins, and
-  docker CLI plugins are lists in `run_onchange_*` scripts: edit the list,
-  apply, done. The docker plugins even self-update on every apply — comparing
-  release tags first, and degrading gracefully offline so a sync never breaks.
+- **Declarative, idempotent provisioning.** apt packages and krew plugins are
+  lists in `run_onchange_*` scripts: edit the list, apply, done. The docker CLI
+  plugins have a script that runs on every apply and updates them itself,
+  comparing release tags first and degrading gracefully offline, so a sync never
+  breaks.
 - **Hostile-network survival.** SSH keepalives tuned for stateful corp
   middleboxes, fail-fast guards so an unreachable host costs 5 seconds instead
   of a 2-minute hang, and repo sync over plain HTTPS — the one protocol that
@@ -429,6 +430,8 @@ was pinned is pinned under its new name.
 - **The installers** of Claude Code, the Devin CLI, sbx, bpftool and ble.sh
   step aside for a name that is skipped or replaced; the overlay installs its
   own build, from `install.sh`, `bin/` or mise conf.d.
+- **The kubectl plugins** (krew) leave out a skipped plugin and install a
+  replaced one under its new name, `INDEX/NAME` for one from another krew index.
 - **Additions** need no entry here: Homebrew packages go in `Brewfile.local`,
   command-line tools in mise conf.d.
 - **A mistake stops the apply** with a message: an unknown key, a malformed
@@ -441,7 +444,7 @@ On a new machine, clone the overlay and run its `install.sh` before the first
 replacement. After that, `up` syncs the overlay before it applies the dotfiles,
 so a change to `packages.toml` takes effect in the same run. Nothing is ever
 uninstalled for you: a public package installed before the overlay arrived
-stays, and `up` names it, with the command that removes it. The apt, krew and
+stays, and `up` names it, with the command that removes it. The apt and
 docker-plugin lists, mise itself, and the npm and Python default packages do not
 read `packages.toml`.
 

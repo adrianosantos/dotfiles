@@ -228,8 +228,9 @@ cask "tower"
 cask "chatgpt"
 # Claude Desktop. Self-updating, so it is pinned in run_pin-self-updating-casks.sh:
 # brew must never try to replace a running, root-owned app bundle (the Chrome lesson).
-# Its own updater is switched off too, in run_disable-claude-desktop-autoupdate.sh:
-# the relaunch that installs an update drops every Remote Control connection.
+# Its own updater is blocked too, by a configuration profile that
+# run_check-claude-desktop-policy.sh checks for: the relaunch that installs an
+# update drops every Remote Control connection. `cask-update claude` updates it.
 cask "claude"
 # Claude Code CLI. Two casks exist and they conflict, so pick one: `claude-code` follows
 # the stable channel (about a week behind, skipping releases with known major regressions),

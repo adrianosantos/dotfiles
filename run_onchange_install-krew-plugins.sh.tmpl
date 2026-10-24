@@ -28,7 +28,11 @@ set -eu
 # nothing changes, exactly one more when the tool shows up on PATH.
 # kubectl: {{ if lookPath "kubectl" }}present{{ else }}absent{{ end }} / krew: {{ if lookPath "kubectl-krew" }}present{{ else }}absent{{ end }}
 
-PLUGINS=(access-matrix cert-manager deprecations gadget grep)
+{{/* Each plugin goes through this machine's packages.toml (README, "Work overlay"): a
+     skipped one is left out, a replaced one is installed under its new name, which
+     may be INDEX/NAME for a plugin from another krew index. A template comment, so
+     this script's text, which decides when it runs again, is unchanged elsewhere. */ -}}
+PLUGINS=({{ includeTemplate "package" (dict "names" "access-matrix cert-manager deprecations gadget grep" "data" .) }})
 
 command -v kubectl >/dev/null 2>&1 || { echo "krew-plugins: kubectl not found — skipping"; exit 0; }
 # krew clones its plugin index with git; without git the bootstrap fails halfway,

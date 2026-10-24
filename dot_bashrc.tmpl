@@ -202,10 +202,13 @@ up() {
   local src; src=$(chezmoi source-path 2>/dev/null) || { echo "up: chezmoi is not set up here" >&2; return 1; }
   if [ -d ~/.local/share/dotfiles-overlay/.git ]; then       # private layer, where present
     local _ovhost
-    _ovhost=$(git -C ~/.local/share/dotfiles-overlay remote get-url origin 2>/dev/null       | sed -E 's#^[a-z]+://##; s#^[^@]*@##; s#[:/].*##')
+    _ovhost=$(git -C ~/.local/share/dotfiles-overlay remote get-url origin 2>/dev/null \
+      | sed -E 's#^[a-z]+://##; s#^[^@]*@##; s#[:/].*##')
     if [ -n "$_ovhost" ] && getent hosts "$_ovhost" >/dev/null 2>&1; then
       echo "== overlay"
-      GIT_SSH_COMMAND='ssh -o ConnectTimeout=5 -o BatchMode=yes'         git -C ~/.local/share/dotfiles-overlay pull --rebase --autostash         && ~/.local/share/dotfiles-overlay/install.sh
+      GIT_SSH_COMMAND='ssh -o ConnectTimeout=5 -o BatchMode=yes' \
+        git -C ~/.local/share/dotfiles-overlay pull --rebase --autostash \
+        && ~/.local/share/dotfiles-overlay/install.sh
     else
       echo "up: overlay host '${_ovhost:-?}' unreachable, skipping"
     fi
