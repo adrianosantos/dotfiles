@@ -123,7 +123,6 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 
 | Tool | What it is |
 | --- | --- |
-| [arc](https://arc.net/) | Chromium based browser |
 | [firefox](https://www.mozilla.org/firefox/) | Web browser |
 | [google-chrome](https://www.google.com/chrome/) | Web browser |
 | [google-chrome@canary](https://www.google.com/chrome/canary/) | Web browser |
