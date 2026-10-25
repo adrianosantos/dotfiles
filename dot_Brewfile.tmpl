@@ -167,9 +167,10 @@ cask "wifiman"
 # on-demand tool here: install it by hand when a capture is actually needed
 #   brew install --cask wireshark-app
 # or better, capture inside a container on a lab node and leave the Mac untouched.
-# The next chezmoi apply (every `up` runs one) pins a hand install, see
-# run_pin-self-updating-casks.sh, and brew refuses to uninstall a pinned cask:
-#   brew unpin --cask wireshark-app && brew uninstall --cask wireshark-app
+# A hand install is not pinned: when its cask moves, a bare `brew upgrade` in `up`
+# upgrades it too and stops at a password prompt (its two packages reinstall as
+# root), so remove it after the capture:
+#   brew uninstall --cask wireshark-app
 # The uninstall leaves the `access_bpf` group. Leave it too: some capture tools ship
 # their own copy of ChmodBPF, which gives /dev/bpf* to that same group at boot.
 
