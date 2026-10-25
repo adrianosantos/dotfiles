@@ -453,8 +453,10 @@ up() {
   # even for a public release: a token kept for another GitLab stops glab's upgrade.
   # What mise fetches here is public, so the upgrade runs without them; a token mise
   # needs for one host goes in ~/.config/mise/gitlab_tokens.toml, which is per host.
+  # prune -y: a version no tracked config asks for any more goes without a question,
+  # as on linux-minimal; otherwise `up` stopped at a prompt for each one it found.
   ( unset GITLAB_TOKEN MISE_GITLAB_TOKEN
-    mise install && mise upgrade "${_mise_skip[@]}" && mise prune )
+    mise install && mise upgrade "${_mise_skip[@]}" && mise prune -y )
   tools
   # A Mac that hosts Claude Code Remote Control from a launchd job runs the `claude`
   # binary as a long-lived process. `brew upgrade` above swaps
