@@ -10,12 +10,12 @@
 Cross-machine dotfiles managed with [chezmoi](https://www.chezmoi.io).
 One templated source, three very different kinds of machine, zero drift:
 
-- **mac-personal** — personal MacBook (Homebrew, full freedom). This is a
+- **mac-personal**: personal MacBook (Homebrew, full freedom). This is a
   *profile*, not a single machine: any additional mac (say, an always-on mini
   running headless AI agents) joins with one `chezmoi init` and gets the
   identical setup.
-- **wsl-work** — locked-down work laptop, WSL2 Ubuntu (mise, Podman, corporate network)
-- **linux-minimal** — any Linux box where you get a home directory and nothing
+- **wsl-work**: locked-down work laptop, WSL2 Ubuntu (mise, Podman, corporate network)
+- **linux-minimal**: any Linux box where you get a home directory and nothing
   else: a jump host, a Raspberry Pi, a NUC. No root, no package manager, bash
   rather than zsh. chezmoi arrives through `bootstrap.sh`, every tool comes
   from mise as a static binary, and a nearly-full home is handled by moving the
@@ -36,7 +36,7 @@ Coding agents setting up a machine from this repo or a fork: read [AGENTS.md](AG
   (`dot_Brewfile.tmpl`); the WSL box is all-in on [mise](https://mise.jdx.dev)
   (per-project language pinning, prebuilt binaries, no root), and so is the
   minimal Linux profile, which additionally forbids itself anything that needs
-  root or a package manager. Tools declare where they live — nothing is
+  root or a package manager. Tools declare where they live; nothing is
   installed ad hoc.
 - **Declarative, idempotent provisioning.** apt packages and krew plugins are
   lists in `run_onchange_*` scripts: edit the list, apply, done. The docker CLI
@@ -45,9 +45,9 @@ Coding agents setting up a machine from this repo or a fork: read [AGENTS.md](AG
   breaks.
 - **Hostile-network survival.** SSH keepalives tuned for stateful corp
   middleboxes, fail-fast guards so an unreachable host costs 5 seconds instead
-  of a 2-minute hang, and repo sync over plain HTTPS — the one protocol that
+  of a 2-minute hang, and repo sync over plain HTTPS, the one protocol that
   corporate egress never mangles.
-- **Employer bits stay out** — see [the overlay pattern](#work-overlay-keeping-employer-specific-bits-private) below.
+- **Employer bits stay out**: see [the overlay pattern](#work-overlay-keeping-employer-specific-bits-private) below.
 
 ## How it fits together
 
@@ -58,7 +58,7 @@ packages, and plugins.
 
 ## What's here
 
-Every tool each machine installs is listed in **[TOOLS.md](TOOLS.md)** — grouped by category, one line each, with a link to its documentation. That
+Every tool each machine installs is listed in **[TOOLS.md](TOOLS.md)**, grouped by category, one line each, with a link to its documentation. That
 file is generated from the config files below and is never hand-edited,
 so it cannot list something that is not actually installed.
 
@@ -66,8 +66,8 @@ so it cannot list something that is not actually installed.
 |---|---|---|
 | `dot_zshrc.tmpl` | `~/.zshrc` | Shared core + per-machine blocks (pkg manager, certs, container runtime, aliases) |
 | `dot_gitconfig.tmpl` | `~/.gitconfig` | delta pager; work identity layered in via `[include]` (not on linux-minimal) |
-| `dot_bashrc.tmpl`, `dot_bash_profile.tmpl` | `~/.bashrc` | linux-minimal only: the bash profile — completions, fzf, history, prompt, `up`/`tools`/`footprint` |
-| `dot_inputrc.tmpl`, `dot_vimrc.tmpl`, `dot_tmux.conf.tmpl` | `~/.inputrc` … | linux-minimal only: readline, vim paste toggle, a tmux config generated for the installed tmux version |
+| `dot_bashrc.tmpl`, `dot_bash_profile.tmpl` | `~/.bashrc` | linux-minimal only: the bash profile (completions, fzf, history, prompt, `up`/`tools`/`footprint`) |
+| `dot_inputrc.tmpl`, `dot_vimrc.tmpl`, `dot_tmux.conf.tmpl` | `~/.inputrc`, `~/.vimrc`, `~/.tmux.conf` | linux-minimal only: readline, vim paste toggle, a tmux config generated for the installed tmux version |
 | `dot_config/bash/bc-compat.bash.tmpl` | shim | Stand-ins for the bash-completion helpers kubectl/helm completions expect |
 | `dot_p10k.zsh` | `~/.p10k.zsh` | Powerlevel10k prompt (plain file) |
 | `dot_Brewfile.tmpl` | `~/.Brewfile` | The Mac's entire toolchain, `brew bundle`-able; a machine's own `~/.Brewfile.local` is added at its end |
@@ -83,20 +83,20 @@ so it cannot list something that is not actually installed.
 | `dot_local/bin/executable_kcx.tmpl` | `~/.local/bin/kcx` | mac: a kubeconfig file per cluster, a context picker, temp kind clusters on any Docker engine, and a read-only shell for AI tools; see [Kubeconfigs](#kubeconfigs-kcx) |
 | `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG` and `~/.local/bin` for every zsh, coding agents' and ssh commands' included; on a `docker-engine` machine also the Homebrew PATH that ssh commands need |
 | `private_dot_ssh/private_config` | `~/.ssh/config` | WSL-only: overlay include + keepalives for stateful-firewall networks |
-| `run_onchange_install-apt-packages.sh.tmpl` | — | Declarative apt list (WSL) |
-| `run_onchange_install-krew-plugins.sh.tmpl` | — | Declarative kubectl/krew plugin list (mac and WSL; on linux-minimal only when asked for via `extras`; bootstraps krew on Linux, skips without git) |
-| `run_before_relocate-bigdisk.sh.tmpl` | — | linux-minimal: moves tool installs, caches and history to a bigger filesystem and links them back |
-| `run_after_install-mise.sh.tmpl` | — | linux-minimal: checksum-verified mise, then every declared tool and its bash completion, reconciled on every apply |
-| `run_after_setup-blesh.sh.tmpl` | — | linux-minimal: ble.sh, pinned and checksum-verified, for fish-style autosuggestions in bash; also splits `fzf --bash` into the files ble.sh's fzf integration reads |
+| `run_onchange_install-apt-packages.sh.tmpl` | - | Declarative apt list (WSL) |
+| `run_onchange_install-krew-plugins.sh.tmpl` | - | Declarative kubectl/krew plugin list (mac and WSL; on linux-minimal only when asked for via `extras`; bootstraps krew on Linux, skips without git) |
+| `run_before_relocate-bigdisk.sh.tmpl` | - | linux-minimal: moves tool installs, caches and history to a bigger filesystem and links them back |
+| `run_after_install-mise.sh.tmpl` | - | linux-minimal: checksum-verified mise, then every declared tool and its bash completion, reconciled on every apply |
+| `run_after_setup-blesh.sh.tmpl` | - | linux-minimal: ble.sh, pinned and checksum-verified, for fish-style autosuggestions in bash; also splits `fzf --bash` into the files ble.sh's fzf integration reads |
 | `dot_local/bin/executable_oscopy`, `executable_tmux-tidy` | `~/.local/bin/` | linux-minimal: copy to the clipboard of the machine you sit at over OSC 52; tidy stray tmux sessions |
-| `bootstrap.sh` | — | Installs a static chezmoi with no package manager and runs the init; `--bigdisk DIR` keeps even that off a small home |
-| `run_onchange_install-ebpf-tools.sh.tmpl` | — | bpftool & friends (WSL; upstream tarball quirks handled) |
-| `run_onchange_install-wsl-integration.sh.tmpl` | — | WSL⇄Windows niceties |
-| `run_install-devin.sh.tmpl` | — | Devin CLI, installed when missing (WSL; linux-minimal with the `devin` extra) |
-| `run_install-claude-code.sh.tmpl` | — | Claude Code, installed when missing with its native installer (WSL; linux-minimal with the `claude` extra) |
-| `run_setup-docker-cli.sh.tmpl` | — | docker CLI against rootless Podman + self-updating `dhi`/`scout` plugins (WSL) |
+| `bootstrap.sh` | - | Installs a static chezmoi with no package manager and runs the init; `--bigdisk DIR` keeps even that off a small home |
+| `run_onchange_install-ebpf-tools.sh.tmpl` | - | bpftool & friends (WSL; upstream tarball quirks handled) |
+| `run_onchange_install-wsl-integration.sh.tmpl` | - | An `xdg-open` that opens URLs and files with Windows' default apps (WSL) |
+| `run_install-devin.sh.tmpl` | - | Devin CLI, installed when missing (WSL; linux-minimal with the `devin` extra) |
+| `run_install-claude-code.sh.tmpl` | - | Claude Code, installed when missing with its native installer (WSL; linux-minimal with the `claude` extra) |
+| `run_setup-docker-cli.sh.tmpl` | - | docker CLI against rootless Podman + self-updating `dhi`/`scout` plugins (WSL) |
 | `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac) |
-| `run_pin-self-updating-casks.sh.tmpl` | — | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
+| `run_pin-self-updating-casks.sh.tmpl` | - | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
 | `gen-tools.py` | `TOOLS.md` | Regenerates the tool inventory; `--check` fails if the file is stale |
 | `.chezmoi.toml.tmpl` | chezmoi config | Prompts once on init: the machine, and for linux-minimal a bigger filesystem and optional extras |
 
@@ -152,7 +152,7 @@ it is, or a fork that only tracks it, and keep what is yours outside it:
 | What the setup occupies, and where (linux-minimal) | `footprint` |
 | Refresh `TOOLS.md` after adding a tool | `./gen-tools.py` (from `chezmoi cd`) |
 
-Templated files (`*.tmpl`) must be edited via `chezmoi edit` — editing the live
+Templated files (`*.tmpl`) must be edited via `chezmoi edit`: editing the live
 file and `re-add`-ing won't work because chezmoi can't un-template. Plain files
 (like `dot_p10k.zsh`) re-add fine.
 
@@ -318,8 +318,8 @@ add `~/.kube/configs` and `~/.kube/temp` to their kubeconfig settings.
 
 ## Work overlay (keeping employer-specific bits private)
 
-This public repo is the **core**. Anything employer-specific — internal tool
-registries, work email, corporate git hosts, work-only shell tooling — lives in
+This public repo is the **core**. Anything employer-specific (internal tool
+registries, work email, corporate git hosts, work-only shell tooling) lives in
 a separate **private overlay** repo, never here. The two are joined entirely by
 each tool's *native* include mechanism, so the public core stays standalone and
 clonable by anyone:
