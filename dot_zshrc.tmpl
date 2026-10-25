@@ -422,8 +422,10 @@ up() {
       grep -vE '^Using ' "$_bundle" || true
       # One pass: a bare `brew upgrade` covers formulae AND casks. A second
       # `brew upgrade --cask` found nothing new and only repeated brew's notice
-      # about the pinned casks it skips.
-      brew upgrade && brew cleanup
+      # about the pinned casks it skips. HOMEBREW_NO_ASK: Homebrew 7's ask mode,
+      # on by default in a terminal, stops a bare `brew upgrade` for a yes whenever
+      # anything is outdated; running `up` is already that yes.
+      HOMEBREW_NO_ASK=1 brew upgrade && brew cleanup
     else
       cat "$_bundle"
     fi
