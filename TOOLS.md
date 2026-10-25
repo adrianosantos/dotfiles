@@ -279,6 +279,7 @@ mise from `dot_config/mise/config.toml.tmpl` (no Homebrew on this box), plus the
 | [kubeshark](https://kubeshark.com) | API Traffic Analyzer providing real-time visibility into Kubernetes network |
 | [operator-sdk](https://sdk.operatorframework.io/) | SDK for building Kubernetes applications |
 | [calico](https://github.com/projectcalico/calico) | Kubernetes networking and network policy (CNI) |
+| [kcx](https://github.com/junior/kcx) | One kubeconfig file per cluster: contexts, namespaces, cluster profiles, a read-only shell for AI tools |
 
 ### Cloud CLIs
 

@@ -188,6 +188,8 @@ OVERRIDES = {
                    "https://github.com/regclient/regclient"),
     "k10s":       ("Kubernetes TUI you can click: search, logs, exec and port-forward",
                    "https://github.com/p10node/k10s"),
+    "kcx":        ("One kubeconfig file per cluster: contexts, namespaces, cluster profiles, a read-only shell for AI tools",
+                   "https://github.com/junior/kcx"),
     "vault":      ("HashiCorp Vault CLI: read and write secrets, log in, manage leases",
                    "https://developer.hashicorp.com/vault"),
     "docker-cli": ("The Docker command-line client on its own, without the engine",
