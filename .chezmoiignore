@@ -83,3 +83,14 @@ ensure-ssh-include.sh
 # anywhere else.
 .local/bin/cask-update
 {{- end }}
+{{ $owner := false }}{{ if and (eq .machine "mac-personal") (has "secrets" $roles) (not (has "docker-engine" $roles)) }}{{ if hasKey . "signingkey" }}{{ if .signingkey }}{{ $logbook := stat (joinPath .chezmoi.homeDir "vaults" "logbook") }}{{ if $logbook }}{{ if $logbook.isDir }}{{ $owner = true }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
+{{ if not $owner -}}
+# ~/Developer's layout (its AGENTS.md and CLAUDE.md, the GitHub/ folders and tmp/) is
+# the owner's own. It renders only on a personal Mac that holds their credentials
+# (role secrets), signs as them (a signingkey) and has the vault its guide points to,
+# ~/vaults/logbook. A plain `chezmoi init`, a fork's machine and a lab node get
+# nothing under ~/Developer.
+Developer
+{{- end }}
+# ~/Developer/work stays a local folder everywhere: nothing in this repo writes there.
+Developer/work

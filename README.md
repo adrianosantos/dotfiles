@@ -74,6 +74,7 @@ so it cannot list something that is not actually installed.
 | `dot_config/mise/config.toml.tmpl` | mise config | Languages everywhere; the full CLI toolchain on WSL |
 | `.chezmoitemplates/packages*` | - | A machine's own package changes, `~/.config/dotfiles/packages.toml`, applied to the Brewfile, the mise config, the installers and `up` (see [Work overlay](#work-overlay-keeping-employer-specific-bits-private)) |
 | `examples/overlay/` | - | A complete sample overlay, with placeholders, to copy into a private repository of your own; never applied |
+| `Developer/` | `~/Developer` | The maintainer's own code layout: an AGENTS.md and CLAUDE.md for agents working there, and its empty folders. Only on the maintainer's Macs (mac-personal, role `secrets`, a signing key and their `~/vaults/logbook`); anyone else gets nothing under `~/Developer` |
 | `dot_config/kind/*.yaml.tmpl` | kind configs | Cluster presets: default, no-CNI, Calico (iptables/eBPF) |
 | `dot_default-python-packages` | mise | Default pip packages for every Python (on linux-minimal only with the `python` extra) |
 | `dot_local/bin/executable_tx` | `~/.local/bin/tx` | curl-only S3 file-transfer client (pairs with [s3tx](https://github.com/junior/s3tx)) |
