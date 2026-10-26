@@ -431,7 +431,27 @@ up() {
     fi
     rm -f "$_bundle"
   else
-    mise self-update                  # only valid where mise isn't brew-managed
+    # Only valid where mise isn't brew-managed. A plain `mise self-update` also
+    # updates every installed plugin and prints "plugin:NAME update git repo" for
+    # each one on every run, changed or not. So mise first, alone; then the plugins
+    # with their output kept back: a plugin is named only when its commit moved,
+    # and the output shows only when the update failed.
+    mise self-update --no-plugins
+    local _mpdir="${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/plugins"
+    local _mp _mpnow _mpout
+    local -A _mpsha
+    for _mp in "$_mpdir"/*(N/); do
+      _mpsha[${_mp:t}]=$(git -C "$_mp" rev-parse --short HEAD 2>/dev/null)
+    done
+    if (( ${#_mpsha} )); then
+      _mpout=$(mise plugins update 2>&1) || print -r -- "$_mpout" >&2
+      for _mp in "$_mpdir"/*(N/); do
+        _mpnow=$(git -C "$_mp" rev-parse --short HEAD 2>/dev/null)
+        if [[ -n "$_mpnow" && "$_mpnow" != "${_mpsha[${_mp:t}]}" ]]; then
+          echo "mise plugin:${_mp:t} ${_mpsha[${_mp:t}]:-new} -> $_mpnow"
+        fi
+      done
+    fi
   fi
   # Pinned casks (run_pin-self-updating-casks), the Claude desktop app among them, whose
   # own updater is blocked (run_check-claude-desktop-policy), are skipped by `brew
