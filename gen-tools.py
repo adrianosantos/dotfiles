@@ -194,8 +194,6 @@ OVERRIDES = {
                    "https://developer.hashicorp.com/vault"),
     "docker-cli": ("The Docker command-line client on its own, without the engine",
                    "https://github.com/docker/cli"),
-    "kubens":     ("Switch between Kubernetes namespaces (ships with kubectx)",
-                   "https://github.com/ahmetb/kubectx"),
     "calico":     ("Kubernetes networking and network policy (CNI)",
                    "https://github.com/projectcalico/calico"),
     "fantasticon": ("Generate an icon font from a directory of SVG files",

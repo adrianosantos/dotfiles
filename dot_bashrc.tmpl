@@ -102,8 +102,12 @@ command -v oscopy  >/dev/null 2>&1 && alias pbcopy='oscopy'
 if   command -v kubecolor >/dev/null 2>&1; then alias k=kubecolor
 elif command -v kubectl   >/dev/null 2>&1; then alias k=kubectl; fi
 command -v helm    >/dev/null 2>&1 && alias h=helm
-command -v kubectx >/dev/null 2>&1 && alias kc=kubectx
-command -v kubens  >/dev/null 2>&1 && alias kn=kubens
+# kcx: KUBECONFIG from its layout, kept current before each prompt, completion, and
+# the context and namespace aliases (kubectx and kubens are retired).
+if command -v kcx >/dev/null 2>&1; then
+  eval "$(kcx init bash)"
+  alias kc=kcx; alias kcc='kcx -c'; alias kn='kcx ns'; alias knc='kcx ns -c'
+fi
 command -v git     >/dev/null 2>&1 && { alias gs='git status -sb'; alias gd='git diff'; alias gl='git log --oneline --graph --decorate'; }
 
 # --- completions -------------------------------------------------------------

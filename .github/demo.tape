@@ -1,5 +1,10 @@
 # Regenerate the README demo:  vhs .github/demo.tape   (from the repo root)
 # Keep this file pure ASCII - multibyte chars mojibake through ttyd typing.
+# On a Mac where Google Chrome quits half a minute into a headless session (seen with
+# Chrome 157 and its updater: every recording longer than that dies with "use of
+# closed network connection"), hide Chrome from VHS's launcher so it fetches a plain
+# Chromium of its own, and turn the browser's own sandbox off inside the profile:
+#   VHS_NO_SANDBOX=true sandbox-exec -p '(version 1) (allow default) (deny file-read* (subpath "/Applications/Google Chrome.app") (subpath "/Applications/Google Chrome Canary.app"))' vhs .github/demo.tape
 Output .github/demo.gif
 
 Set Shell zsh

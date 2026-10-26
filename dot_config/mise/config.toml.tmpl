@@ -72,8 +72,6 @@ k9s       = "latest"
 kind      = "latest"
 kubecolor = "latest"
 kubectl   = "latest"
-kubectx   = "latest"
-kubens    = "latest"
 kustomize = "latest"
 stern     = "latest"
 # Not in mise's registry — the github backend pulls release assets directly.
@@ -83,10 +81,10 @@ stern     = "latest"
 "github:operator-framework/operator-sdk" = "latest"
 "github:projectcalico/calico"            = "latest"
 # kcx, the maintainer's kubeconfig tool (one file per cluster, contexts, namespaces,
-# cluster profiles, a read-only shell for AI tools); mise verifies the release's
-# GitHub attestation. A pre-release, pinned for its tests on this profile; it moves
-# to "latest" when 2.0.0 is out, and then to the Macs and linux-minimal too.
-"github:junior/kcx"                      = "2.0.0-rc.3"
+# cluster profiles, a read-only shell for AI tools), in place of kubectx and kubens;
+# mise verifies the release's GitHub attestation. A pre-release, pinned until 2.0.0
+# is out, then "latest".
+"github:junior/kcx"                      = "2.0.0-rc.4"
 
 # --- Cloud CLIs ---
 # The HashiCorp Vault CLI. Homebrew-core dropped it with its licence change, so the
@@ -134,10 +132,18 @@ zoxide    = "latest"
 {{- end }}
 
 {{ if eq .machine "mac-personal" -}}
-# === mac-personal: opentofu + npm globals (languages above; rest via Homebrew) ===
+# === mac-personal: opentofu, kcx + npm globals (languages above; rest via Homebrew) ===
 
 # --- Languages + runtimes ---
 opentofu = "latest"
+
+# --- Kubernetes / cloud-native ---
+# kcx, the maintainer's kubeconfig tool (contexts, namespaces, one file per cluster,
+# cluster profiles, a read-only shell for AI tools), in place of kubectx and kubens
+# and of the bash kcx 1.0 these dotfiles used to install: its GitHub release, the
+# attestation verified by mise, until the Homebrew tap carries a formula. A
+# pre-release, pinned until 2.0.0 is out, then "latest".
+"github:junior/kcx" = "2.0.0-rc.4"
 
 # --- Dev utilities ---
 "npm:fantasticon" = "latest"
@@ -170,9 +176,12 @@ uv        = "latest"
 k9s       = "latest"
 kubecolor = "latest"   # `k` is kubecolor when present, kubectl otherwise
 stern     = "latest"
-kubectx   = "latest"
-kubens    = "latest"
 kustomize = "latest"
+# kcx, the maintainer's kubeconfig tool (contexts, namespaces, one file per cluster,
+# a read-only shell), a static binary from its GitHub release, in place of kubectx
+# and kubens; mise verifies the release's attestation. A pre-release, pinned until
+# 2.0.0 is out, then "latest".
+"github:junior/kcx" = "2.0.0-rc.4"
 
 # --- Dev utilities ---
 # Search and navigation: the difference between a bare login and a workstation.

@@ -26,15 +26,19 @@ done
 unset _p
 {{- end }}
 
-# --- ~/.local/bin, where these dotfiles install kcx, tx and vaults ---
-# .zshrc puts it first for interactive shells; a command run over ssh and an agent's
-# `zsh -lc` read only this file, so without it `ssh host kcx ...` is "command not
-# found". Appended here, so in a script it never shadows a system or Homebrew tool.
-if [[ -d $HOME/.local/bin && :$PATH: != *:$HOME/.local/bin:* ]]; then
-  export PATH="$PATH:$HOME/.local/bin"
-fi
+# --- ~/.local/bin, where these dotfiles install tx and vaults, and mise's shims ---
+# .zshrc puts ~/.local/bin first for interactive shells and activates mise; a command
+# run over ssh and an agent's `zsh -lc` read only this file, so without these lines
+# `ssh host tx ...` and `zsh -lc 'kcx ...'` (kcx is a mise tool) are "command not
+# found". Appended here, so in a script they never shadow a system or Homebrew tool.
+for _d in "$HOME/.local/bin" "$HOME/.local/share/mise/shims"; do
+  if [[ -d $_d && :$PATH: != *:$_d:* ]]; then
+    export PATH="$PATH:$_d"
+  fi
+done
+unset _d
 
-# --- KUBECONFIG: a file per cluster, kept by kcx (~/.local/bin/kcx) ---
+# --- KUBECONFIG: a file per cluster, kept by kcx ---
 # The state file first, where kubectl writes the current context, then the
 # permanent clusters, then the temp ones, each directory sorted: the same rule as
 # _kcx_files in kcx, whose `kcx env` prints it for shells other than zsh.

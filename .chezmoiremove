@@ -1,0 +1,3 @@
+# Targets chezmoi removes on apply. The bash kcx 1.0 these dotfiles installed on
+# the Macs until October 2026, replaced by the Go kcx that mise installs.
+.local/bin/kcx

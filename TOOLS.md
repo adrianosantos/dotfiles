@@ -52,7 +52,6 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [krew](https://sigs.k8s.io/krew/) | Package manager for kubectl plugins |
 | [ktop](https://ktop.app/) | Top-like tool for your Kubernetes clusters |
 | [kubecolor](https://kubecolor.github.io/) | Colorize your kubectl output |
-| [kubectx](https://github.com/ahmetb/kubectx) | Tool that can switch between kubectl contexts easily and create aliases |
 | [kubeshark](https://kubeshark.com) | API Traffic Analyzer providing real-time visibility into Kubernetes network |
 | [minikube](https://minikube.sigs.k8s.io/) | Run a Kubernetes cluster locally |
 | [operator-sdk](https://sdk.operatorframework.io/) | SDK for building Kubernetes applications |
@@ -217,6 +216,7 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | Tool | What it is |
 | --- | --- |
 | [k10s](https://github.com/p10node/k10s) | Kubernetes TUI you can click: search, logs, exec and port-forward |
+| [kcx](https://github.com/junior/kcx) | One kubeconfig file per cluster: contexts, namespaces, cluster profiles, a read-only shell for AI tools |
 
 ### Dev utilities
 
@@ -270,8 +270,6 @@ mise from `dot_config/mise/config.toml.tmpl` (no Homebrew on this box), plus the
 | [kind](https://kind.sigs.k8s.io/) | Run local Kubernetes cluster in Docker |
 | [kubecolor](https://kubecolor.github.io/) | Colorize your kubectl output |
 | [kubectl](https://kubernetes.io/docs/reference/kubectl/) | Kubernetes command-line interface |
-| [kubectx](https://github.com/ahmetb/kubectx) | Tool that can switch between kubectl contexts easily and create aliases |
-| [kubens](https://github.com/ahmetb/kubectx) | Switch between Kubernetes namespaces (ships with kubectx) |
 | [kustomize](https://github.com/kubernetes-sigs/kustomize) | Template-free customization of Kubernetes YAML manifests |
 | [stern](https://github.com/stern/stern) | Tail multiple Kubernetes pods & their containers |
 | [falcoctl](https://github.com/falcosecurity/falcoctl) | CLI tool for working with Falco and its ecosystem components |
@@ -357,9 +355,8 @@ mise from `dot_config/mise/config.toml.tmpl` on a host with no package manager: 
 | [k9s](https://k9scli.io/) | Kubernetes CLI To Manage Your Clusters In Style! |
 | [kubecolor](https://kubecolor.github.io/) | Colorize your kubectl output |
 | [stern](https://github.com/stern/stern) | Tail multiple Kubernetes pods & their containers |
-| [kubectx](https://github.com/ahmetb/kubectx) | Tool that can switch between kubectl contexts easily and create aliases |
-| [kubens](https://github.com/ahmetb/kubectx) | Switch between Kubernetes namespaces (ships with kubectx) |
 | [kustomize](https://github.com/kubernetes-sigs/kustomize) | Template-free customization of Kubernetes YAML manifests |
+| [kcx](https://github.com/junior/kcx) | One kubeconfig file per cluster: contexts, namespaces, cluster profiles, a read-only shell for AI tools |
 
 ### Dev utilities
 

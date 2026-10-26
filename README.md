@@ -81,7 +81,6 @@ so it cannot list something that is not actually installed.
 | `dot_local/bin/executable_cask-update` | `~/.local/bin/cask-update` | mac: updates a pinned cask's app by hand, after a yes: quits it, unpins, upgrades, pins again, reopens it; `--check`, which `up` runs, names the apps behind their cask by the app's own version. `cask-update claude` is how the Claude desktop app is updated, its own updater being blocked |
 | `dot_config/claude-desktop/block-auto-updates.mobileconfig` | `~/.config/claude-desktop/` | mac: the configuration profile that blocks the Claude desktop app's own updater; installed once, by hand |
 | `dot_local/bin/executable_vaults` | `~/.local/bin/vaults` | one status line per Obsidian vault (changes, commits to push or pull, last commit) and `vaults pull` for all of them; POSIX sh, not on linux-minimal |
-| `dot_local/bin/executable_kcx.tmpl` | `~/.local/bin/kcx` | mac: a kubeconfig file per cluster, a context picker, temp kind clusters on any Docker engine, and a read-only shell for AI tools; see [Kubeconfigs](#kubeconfigs-kcx) |
 | `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG` and `~/.local/bin` for every zsh, coding agents' and ssh commands' included; on a `docker-engine` machine also the Homebrew PATH that ssh commands need |
 | `private_dot_ssh/private_config` | `~/.ssh/config` | WSL-only: overlay include + keepalives for stateful-firewall networks |
 | `run_onchange_install-apt-packages.sh.tmpl` | - | Declarative apt list (WSL) |
@@ -269,10 +268,11 @@ The alias half can hold several names separated by spaces.
 
 ## Kubeconfigs (kcx)
 
-On the Macs every cluster gets a kubeconfig file of its own, so importing one
-cluster can never overwrite another one's credentials, which is what happens when
-every tool merges into `~/.kube/config`. `kcx` (`~/.local/bin/kcx`, `kcx -h`)
-keeps this layout:
+Every cluster gets a kubeconfig file of its own, so importing one cluster can
+never overwrite another one's credentials, which is what happens when every tool
+merges into `~/.kube/config`. [kcx](https://github.com/junior/kcx), which mise
+installs from its GitHub release on every profile (`kcx -h`), keeps this layout;
+it replaced kubectx and kubens here:
 
 | path | holds |
 | --- | --- |
@@ -280,15 +280,20 @@ keeps this layout:
 | `~/.kube/configs/NAME.yaml` | one permanent cluster; import renames its cluster, user and context to `NAME` |
 | `~/.kube/temp/NAME@ENGINE.yaml` | one temp kind cluster, `ENGINE` being the docker context it runs on; deleted with the cluster |
 
-`KUBECONFIG` lists them in that order. `~/.zshenv` sets it, because zsh reads that
-file in every shell: terminals, the `zsh -c` and `zsh -lc` that coding agents run
-their commands in, and `ssh host command`. It is recomputed for each new shell and
-before each prompt, and a `KUBECONFIG` someone set on purpose is left alone. `kcx env`
-prints it for any other shell.
+`KUBECONFIG` lists them in that order. On the Macs `~/.zshenv` sets it, because zsh
+reads that file in every shell: terminals, the `zsh -c` and `zsh -lc` that coding
+agents run their commands in, and `ssh host command`. Everywhere, `.zshrc` (`.bashrc`
+on linux-minimal) evaluates `kcx init`, which sets it for the shell, recomputes it
+before each prompt and installs completion. A `KUBECONFIG` someone set on purpose is
+left alone. `kcx env` prints it for any other shell.
 
-- `kcx` picks a context with fzf; `kcx NAME`, `kcx -` and `kcx -c` switch, go back
-  and print the current one (`kc` and `kcc` are aliases). kubectx works on the same
-  files.
+- `kcx` picks a context with fzf, and its top line browses the profile's clusters
+  by group and site; `kcx NAME`, `kcx -` and `kcx -c` switch, go back and print
+  the current one (`kc` and `kcc` are aliases). `kcx ns` does the same for
+  namespaces (`kn`, `knc`).
+- A profile, `~/.config/kcx/profiles/*.toml`, lists the clusters a machine may
+  fetch by short name through its platform's command and a secret provider. It is
+  each machine's own (the work overlay's, there), never this repository's.
 - `kcx add NAME FILE`, `kcx add NAME -` (standard input) or `kcx add NAME -- CMD...`
   imports a cluster. The last form runs a provider's own command with `KUBECONFIG`
   pointed at a new file, for example `kcx add eks-lab -- aws eks update-kubeconfig
@@ -301,9 +306,10 @@ prints it for any other shell.
   `kcx temp rm` and `kcx temp prune` look after them.
 - `kcx run NAME -- CMD...` runs one command against one cluster without touching the
   current context. `kcx -r [NAME] [-- CMD...]` opens a read-only shell, or runs one
-  read-only command, through a local `kubectl proxy` that refuses writes, exec, attach
-  and port-forward. Its kubeconfig holds no credentials and stays in place through
-  the shell's own startup files.
+  read-only command, through a local proxy that refuses writes, exec, attach and
+  port-forward. Its kubeconfig holds no credentials and stays in place through the
+  shell's own startup files, and the prompt keeps the `(READ-ONLY)` context in sight
+  until the shell is left.
 
 **Agents** share one current context with every other shell, so a switch made in one
 session points kubectl in all the others at a different cluster. They name the
