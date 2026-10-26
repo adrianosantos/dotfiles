@@ -21,6 +21,10 @@ python.compile = false
 # hand-off to uv throws a fatal uv error on this box, while `uv tool install`
 # works directly. (uvx uses the `uv` tool, already pinned in [tools] below.)
 pipx.uvx = true
+# mise hides a release younger than its minimum release age (a supply-chain guard),
+# so the maintainer's own kcx spent the day after each release unresolvable as
+# "latest", and `up` warned "no latest version found". His own tool is exempt.
+minimum_release_age_excludes = ["github:junior/kcx"]
 
 [tools]
 # Categories below are the `# --- ... ---` headers; gen-tools.py reads them to
@@ -82,11 +86,9 @@ stern     = "latest"
 "github:projectcalico/calico"            = "latest"
 # kcx, the maintainer's kubeconfig tool (one file per cluster, contexts, namespaces,
 # cluster profiles, a read-only shell for AI tools), in place of kubectx and kubens;
-# mise verifies the release's GitHub attestation. The Macs build it from the
-# Homebrew tap instead. Pinned, not "latest": mise hides a release younger than its
-# minimum_release_age, and a "latest" it cannot resolve leaves the tool unresolved
-# and prunable; a new release is a bump here, after that age has passed.
-"github:junior/kcx"                      = "2.0.0"
+# mise verifies the release's GitHub attestation, and "latest" resolves at once
+# thanks to the exemption in [settings]. The Macs build it from the Homebrew tap.
+"github:junior/kcx"                      = "latest"
 
 # --- Cloud CLIs ---
 # The HashiCorp Vault CLI. Homebrew-core dropped it with its licence change, so the
@@ -173,9 +175,9 @@ stern     = "latest"
 kustomize = "latest"
 # kcx, the maintainer's kubeconfig tool (contexts, namespaces, one file per cluster,
 # a read-only shell), a static binary from its GitHub release, in place of kubectx
-# and kubens; mise verifies the release's attestation. Pinned, not "latest", for the
-# reason the wsl-work entry gives.
-"github:junior/kcx" = "2.0.0"
+# and kubens; mise verifies the release's attestation, and "latest" resolves at
+# once thanks to the exemption in [settings].
+"github:junior/kcx" = "latest"
 
 # --- Dev utilities ---
 # Search and navigation: the difference between a bare login and a workstation.

@@ -318,7 +318,7 @@ mise from `dot_config/mise/config.toml.tmpl` (no Homebrew on this box), plus the
 
 | Tool | What it is |
 | --- | --- |
-| [claude-code](https://github.com/anthropics/claude-code) | - |
+| [claude-code](https://claude.com/product/claude-code) | Terminal-based AI coding assistant |
 | [devin](https://docs.devin.ai/) | Cognition's software agent, driven from the terminal |
 | [sbx](https://github.com/docker/sbx-releases) | Build, run, and govern agents across the software development lifecycle |
 
