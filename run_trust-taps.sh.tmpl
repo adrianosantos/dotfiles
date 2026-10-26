@@ -22,7 +22,7 @@ set -eu
 command -v brew >/dev/null 2>&1 || exit 0
 
 # "<entry>:<kind>" pairs, matching what the Brewfile declares for THIS machine.
-ENTRIES=("junior/tap/skilla:formula"{{ if not $lab }} "hashicorp/tap/vault:formula" "junior/tap/s3tx:formula"{{ end }}{{ if and (eq .chezmoi.arch "arm64") (not $lab) }} "docker/tap/sbx:cask"{{ end }})
+ENTRIES=("junior/tap/skilla:formula" "junior/tap/kcx:formula"{{ if not $lab }} "hashicorp/tap/vault:formula" "junior/tap/s3tx:formula"{{ end }}{{ if and (eq .chezmoi.arch "arm64") (not $lab) }} "docker/tap/sbx:cask"{{ end }})
 
 # `brew trust --json v1` prints the store; grepping the JSON keeps this to one
 # brew call and no parser. Trusting an already-trusted entry is harmless, but

@@ -52,6 +52,7 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [krew](https://sigs.k8s.io/krew/) | Package manager for kubectl plugins |
 | [ktop](https://ktop.app/) | Top-like tool for your Kubernetes clusters |
 | [kubecolor](https://kubecolor.github.io/) | Colorize your kubectl output |
+| [kcx](https://github.com/junior/kcx) | One kubeconfig file per cluster: contexts, namespaces, cluster profiles, a read-only shell for AI tools |
 | [kubeshark](https://kubeshark.com) | API Traffic Analyzer providing real-time visibility into Kubernetes network |
 | [minikube](https://minikube.sigs.k8s.io/) | Run a Kubernetes cluster locally |
 | [operator-sdk](https://sdk.operatorframework.io/) | SDK for building Kubernetes applications |
@@ -216,7 +217,6 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | Tool | What it is |
 | --- | --- |
 | [k10s](https://github.com/p10node/k10s) | Kubernetes TUI you can click: search, logs, exec and port-forward |
-| [kcx](https://github.com/junior/kcx) | One kubeconfig file per cluster: contexts, namespaces, cluster profiles, a read-only shell for AI tools |
 
 ### Dev utilities
 
@@ -318,7 +318,7 @@ mise from `dot_config/mise/config.toml.tmpl` (no Homebrew on this box), plus the
 
 | Tool | What it is |
 | --- | --- |
-| [claude-code](https://claude.com/product/claude-code) | Terminal-based AI coding assistant |
+| [claude-code](https://github.com/anthropics/claude-code) | - |
 | [devin](https://docs.devin.ai/) | Cognition's software agent, driven from the terminal |
 | [sbx](https://github.com/docker/sbx-releases) | Build, run, and govern agents across the software development lifecycle |
 

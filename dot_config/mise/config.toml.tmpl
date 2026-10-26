@@ -82,9 +82,11 @@ stern     = "latest"
 "github:projectcalico/calico"            = "latest"
 # kcx, the maintainer's kubeconfig tool (one file per cluster, contexts, namespaces,
 # cluster profiles, a read-only shell for AI tools), in place of kubectx and kubens;
-# mise verifies the release's GitHub attestation. A pre-release, pinned until 2.0.0
-# is out, then "latest".
-"github:junior/kcx"                      = "2.0.0-rc.5"
+# mise verifies the release's GitHub attestation. The Macs build it from the
+# Homebrew tap instead. Pinned, not "latest": mise hides a release younger than its
+# minimum_release_age, and a "latest" it cannot resolve leaves the tool unresolved
+# and prunable; a new release is a bump here, after that age has passed.
+"github:junior/kcx"                      = "2.0.0"
 
 # --- Cloud CLIs ---
 # The HashiCorp Vault CLI. Homebrew-core dropped it with its licence change, so the
@@ -132,18 +134,10 @@ zoxide    = "latest"
 {{- end }}
 
 {{ if eq .machine "mac-personal" -}}
-# === mac-personal: opentofu, kcx + npm globals (languages above; rest via Homebrew) ===
+# === mac-personal: opentofu + npm globals (languages above; rest via Homebrew) ===
 
 # --- Languages + runtimes ---
 opentofu = "latest"
-
-# --- Kubernetes / cloud-native ---
-# kcx, the maintainer's kubeconfig tool (contexts, namespaces, one file per cluster,
-# cluster profiles, a read-only shell for AI tools), in place of kubectx and kubens
-# and of the bash kcx 1.0 these dotfiles used to install: its GitHub release, the
-# attestation verified by mise, until the Homebrew tap carries a formula. A
-# pre-release, pinned until 2.0.0 is out, then "latest".
-"github:junior/kcx" = "2.0.0-rc.5"
 
 # --- Dev utilities ---
 "npm:fantasticon" = "latest"
@@ -179,9 +173,9 @@ stern     = "latest"
 kustomize = "latest"
 # kcx, the maintainer's kubeconfig tool (contexts, namespaces, one file per cluster,
 # a read-only shell), a static binary from its GitHub release, in place of kubectx
-# and kubens; mise verifies the release's attestation. A pre-release, pinned until
-# 2.0.0 is out, then "latest".
-"github:junior/kcx" = "2.0.0-rc.5"
+# and kubens; mise verifies the release's attestation. Pinned, not "latest", for the
+# reason the wsl-work entry gives.
+"github:junior/kcx" = "2.0.0"
 
 # --- Dev utilities ---
 # Search and navigation: the difference between a bare login and a workstation.

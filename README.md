@@ -270,9 +270,10 @@ The alias half can hold several names separated by spaces.
 
 Every cluster gets a kubeconfig file of its own, so importing one cluster can
 never overwrite another one's credentials, which is what happens when every tool
-merges into `~/.kube/config`. [kcx](https://github.com/junior/kcx), which mise
-installs from its GitHub release on every profile (`kcx -h`), keeps this layout;
-it replaced kubectx and kubens here:
+merges into `~/.kube/config`. [kcx](https://github.com/junior/kcx), which
+Homebrew builds from the `junior/tap` formula on the Macs and mise installs from
+its GitHub release elsewhere (`kcx -h`), keeps this layout; it replaced kubectx
+and kubens here:
 
 | path | holds |
 | --- | --- |
