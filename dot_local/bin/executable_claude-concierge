@@ -1,0 +1,125 @@
+#!/bin/bash
+# claude-concierge - the concierge of a session host (role session-host).
+#
+# The Claude desktop app hosts the interactive sessions, and when it relaunches
+# every session drops off Remote Control until someone sends it a message. The
+# concierge is a command-line Claude Code that does not depend on the app: Claude
+# Code's Remote Control server (`claude remote-control`), kept running by launchd
+# through the job local.claude-remote-control, so the phone can still reach the
+# Mac, start sessions there and ask a desktop session to come back.
+#
+# launchd runs `claude-concierge run`, which starts a tmux server (Remote Control
+# wants a terminal) whose one session runs `claude-concierge serve`, and stays in
+# the foreground for as long as that session lives. When the server exits (it
+# gives up after about ten minutes offline), the session ends, `run` returns and
+# launchd starts it again. `up` restarts the job when the Claude Code cask moves.
+#
+# Usage:
+#   claude-concierge status    the job, the tmux session and the log's last lines
+#   claude-concierge attach    look at the concierge, or answer it (C-b d detaches)
+#   claude-concierge start     load the launchd job, or start it if it is loaded
+#   claude-concierge restart   restart it (the running conversation ends)
+#   claude-concierge stop      unload the job until `start` or the next login
+#   claude-concierge run|serve launchd's entry point and the tmux session's
+#
+# Before the first `start`, once per Mac and in a terminal of your own: run
+# `claude` in the concierge's folder, trust that folder and sign in with /login.
+# Remote Control needs that full sign-in (a `claude setup-token` token cannot host
+# it), and an unattended start in a folder never trusted exits with "Workspace not
+# trusted". Until then `serve` fails, says so in the log and waits before the next
+# try, so launchd does not spin.
+set -u
+
+LABEL=local.claude-remote-control
+SOCKET=${CONCIERGE_TMUX_SOCKET:-concierge}     # tmux -L name, separate from yours
+SESSION=concierge
+NAME=${CONCIERGE_NAME:-concierge}              # shown in claude.ai/code
+DIR=${CONCIERGE_DIR:-$HOME/Developer}          # its folder: trusted, never $HOME
+MODE=${CONCIERGE_PERMISSION_MODE:-auto}        # for the sessions it spawns
+BACKOFF=${CONCIERGE_BACKOFF:-300}              # seconds to wait after a failed start
+LOG=${CONCIERGE_LOG:-$HOME/Library/Logs/claude-concierge.log}
+PLIST=$HOME/Library/LaunchAgents/$LABEL.plist
+
+# Homebrew first, so the cask's claude wins over any other copy on PATH.
+for p in /opt/homebrew/bin /usr/local/bin; do
+  [ -x "$p/brew" ] && { BREW_BIN=$p; break; }
+done
+PATH_CLEAN="${BREW_BIN:-/opt/homebrew/bin}:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.local/bin"
+TMUX_BIN=$(PATH=$PATH_CLEAN command -v tmux || true)
+CLAUDE_BIN=${CONCIERGE_CLAUDE:-$(PATH=$PATH_CLEAN command -v claude || true)}
+
+log() { mkdir -p "$(dirname "$LOG")"; printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
+say() { printf 'claude-concierge: %s\n' "$*"; }
+domain() { printf 'gui/%s' "$(id -u)"; }
+tm() { "$TMUX_BIN" -L "$SOCKET" "$@"; }
+
+cmd_serve() {   # inside the tmux session: run the server once, in a clean environment
+  [ -n "$CLAUDE_BIN" ] || { log "serve: no claude on $PATH_CLEAN"; say "no claude found"; sleep "$BACKOFF"; exit 1; }
+  [ -d "$DIR" ] || { log "serve: folder $DIR is missing"; say "folder $DIR is missing"; sleep "$BACKOFF"; exit 1; }
+  cd "$DIR" || exit 1
+  log "serve: starting $CLAUDE_BIN remote-control --name $NAME in $DIR"
+  start=$(date +%s)
+  # Nothing of the caller's environment reaches it: an agent's shell carries some
+  # thirty CLAUDE_* variables that would tie it to the desktop app, and an
+  # ANTHROPIC_API_KEY or a setup-token in the environment blocks Remote Control.
+  env -i HOME="$HOME" USER="${USER:-$(id -un)}" LOGNAME="${LOGNAME:-$(id -un)}" \
+      SHELL=/bin/zsh PATH="$PATH_CLEAN" TERM="${TERM:-xterm-256color}" \
+      LANG="${LANG:-en_US.UTF-8}" TMPDIR="${TMPDIR:-/tmp}" \
+      "$CLAUDE_BIN" remote-control --name "$NAME" --permission-mode "$MODE"
+  rc=$?
+  ran=$(( $(date +%s) - start ))
+  log "serve: claude exited with $rc after ${ran}s"
+  if [ "$rc" -ne 0 ] && [ "$ran" -lt 60 ]; then
+    log "serve: a failed start; waiting ${BACKOFF}s before the next try"
+    say "claude exited with $rc after ${ran}s. If it asked for a login or for trust, run 'claude' once in $DIR yourself. Next try in ${BACKOFF}s."
+    sleep "$BACKOFF"
+  fi
+  exit "$rc"
+}
+
+cmd_run() {     # launchd's entry point: start the session, wait while it lives
+  [ -n "$TMUX_BIN" ] || { log "run: tmux not found on $PATH_CLEAN"; sleep "$BACKOFF"; exit 1; }
+  tm kill-server 2>/dev/null || true   # one left over from a killed run, or an old binary
+  trap 'log "run: stopping"; tm kill-server 2>/dev/null; exit 0' TERM INT HUP
+  self=$(cd "$(dirname "$0")" && pwd)/$(basename "$0")
+  SHELL=/bin/sh tm new-session -d -s "$SESSION" -x 200 -y 50 "exec /bin/bash '$self' serve" || {
+    log "run: tmux could not start the session"; sleep "$BACKOFF"; exit 1; }
+  log "run: session started"
+  while tm has-session -t "$SESSION" 2>/dev/null; do sleep 10 & wait $!; done
+  log "run: session ended"
+  tm kill-server 2>/dev/null || true
+  exit 0
+}
+
+cmd_status() {
+  if launchctl print "$(domain)/$LABEL" >/dev/null 2>&1; then
+    launchctl print "$(domain)/$LABEL" | sed -nE 's/^[[:space:]]*(state|pid|last exit code|runs) = /\1: /p'
+  else
+    say "the job $LABEL is not loaded (claude-concierge start)"
+  fi
+  if [ -n "$TMUX_BIN" ] && tm has-session -t "$SESSION" 2>/dev/null; then
+    say "tmux session '$SESSION' is running (claude-concierge attach)"
+  else
+    say "no tmux session"
+  fi
+  [ -f "$LOG" ] && tail -n 5 "$LOG"
+  return 0
+}
+
+case "${1:-status}" in
+  serve)   cmd_serve ;;
+  run)     cmd_run ;;
+  status)  cmd_status ;;
+  attach)  exec "$TMUX_BIN" -L "$SOCKET" attach -t "$SESSION" ;;
+  start)
+    [ -f "$PLIST" ] || { say "$PLIST is missing: is this Mac's role session-host?"; exit 1; }
+    if launchctl print "$(domain)/$LABEL" >/dev/null 2>&1; then
+      launchctl kickstart "$(domain)/$LABEL"
+    else
+      launchctl bootstrap "$(domain)" "$PLIST"
+    fi ;;
+  restart) launchctl kickstart -k "$(domain)/$LABEL" ;;
+  stop)    launchctl bootout "$(domain)/$LABEL" ;;
+  -h|--help|help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' ;;
+  *) say "unknown command '$1' (try claude-concierge help)"; exit 2 ;;
+esac

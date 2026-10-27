@@ -384,10 +384,12 @@ up() {
     echo
   fi
   rm -f "$_cmerr"
-  # Claude Code's cask: claude-code@latest, or what this machine's packages.toml
+  # Claude Code's cask: claude-code@latest, claude-code (the stable channel) on a
+  # session host, whose concierge runs it, or what this machine's packages.toml
   # replaces it with (empty when it skips it). The Remote Control restart at the end
   # follows it.
-  local _cc_cask={{ includeTemplate "package" (dict "names" "claude-code@latest" "data" . "tokens" true) | squote }} _cc_before=
+{{- $cc := "claude-code@latest" }}{{ if hasKey . "roles" }}{{ if and (has "session-host" .roles) (not (has "docker-engine" .roles)) }}{{ $cc = "claude-code" }}{{ end }}{{ end }}
+  local _cc_cask={{ includeTemplate "package" (dict "names" $cc "data" . "tokens" true) | squote }} _cc_before=
   [[ -n "$_cc_cask" ]] && _cc_before=$(brew list --cask --versions "$_cc_cask" 2>/dev/null)
   if command -v brew &>/dev/null; then
     # A package this machine skips or replaces (a "# skipped by" or "# replaced by"

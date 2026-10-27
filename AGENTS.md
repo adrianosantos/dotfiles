@@ -56,8 +56,9 @@ never applies this file or CLAUDE.md to a home folder: `.chezmoiignore` lists bo
 - Never remove a profile, even one you do not use: upstream keeps all three, and a
   fork without one no longer merges upstream cleanly.
 - Before adding a tool, look in [TOOLS.md](TOOLS.md): it lists everything each
-  profile installs. Claude Code (`claude-code@latest` on a Mac) and the Claude
-  desktop app (`claude`) are already there. A different build of a listed tool is a
+  profile installs. Claude Code (`claude-code@latest` on a Mac, the stable
+  `claude-code` on a session host) and the Claude desktop app (`claude`) are
+  already there. A different build of a listed tool is a
   replacement in `packages.toml`, not a second entry.
 - Never put names, email addresses, host names, internal URLs, keys, tokens or other
   secrets in this repository or a fork of it: both are public.
@@ -77,6 +78,7 @@ never applies this file or CLAUDE.md to a home folder: `.chezmoiignore` lists bo
 | `chezconf` (zsh) | Prints this machine's chezmoi data: profile, roles, lab hosts, signing key, CA URL, bigdisk, extras. Read-only. | Before `chezmoi init`, or to see how a machine is set up. |
 | `tools` | Counts the tools each category declares, read from the `# --- Category ---` headers of `~/.Brewfile` and the mise config. Read-only. | To see the shape of a machine's toolchain; TOOLS.md has the long form. |
 | `cask-update` (Mac) | `cask-update --check` names the pinned casks whose app is behind its cask (what `up` runs). `cask-update [-y] NAME...` quits the app if it runs, unpins, upgrades, pins again and reopens it; it refuses to update the Claude desktop app from a shell inside that app. | `--check` any time. An update only when the user asks: it quits the app. |
+| `claude-concierge` (Mac, role session-host) | The concierge: `status` shows its launchd job (`local.claude-remote-control`), its tmux session and its log; `start`, `restart` and `stop` load, restart and unload the job; `attach` opens the session; `run` and `serve` are the job's own entry points. README, "The concierge". | `status` any time. `restart` and `stop` only on the user's word: they end the concierge's conversation, which may be the one the user reaches the Mac through. Never `attach` to answer it for the user, and never `run` or `serve` by hand. |
 | `kcx` | One kubeconfig file per cluster under `~/.kube`; `kcx -h` lists the commands (`kc`, `kcc`, `kn` and `knc` are its aliases; kubectx and kubens are gone). Every shell shares one current context, so switching it in one session moves every other session to another cluster. | Never switch the context: name the cluster per command, `kubectl --context NAME ...` or `kcx run NAME -- COMMAND`, and use `kcx -r NAME -- COMMAND` for anything that only reads. `kcx add` and `kcx temp create` switch only with `--use`. A shell computes `KUBECONFIG` when it starts, so in the command that adds a cluster, reach it with `kcx run`; `kubectl --context` sees it from the next shell on. |
 | `rkind`, `rkind-fix-kubeconfig`, `rkind-load-image` (WSL) | `rkind ARGS` runs kind as root on podman, for clusters whose agents load eBPF programs, hands the kubeconfig back and, after `create`, points it at the control-plane container. `rkind-fix-kubeconfig [CLUSTER]` does that pointing again (after a WSL restart). `rkind-load-image IMAGE` copies an image from rootless to rootful podman and loads it into the cluster. They use sudo. | Only for a cluster that needs root; plain `kind` otherwise. |
 | `footprint` (linux-minimal) | Disk use of the setup, part by part, in MB, and the free space in the home filesystem. Read-only. | On a small home, before and after adding an extra. |
