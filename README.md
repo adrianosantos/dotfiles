@@ -79,7 +79,7 @@ so it cannot list something that is not actually installed.
 | `dot_default-python-packages` | mise | Default pip packages for every Python (on linux-minimal only with the `python` extra) |
 | `dot_local/bin/executable_tx` | `~/.local/bin/tx` | curl-only S3 file-transfer client (pairs with [s3tx](https://github.com/junior/s3tx)) |
 | `dot_local/bin/executable_cask-update` | `~/.local/bin/cask-update` | mac: updates a pinned cask's app by hand, after a yes: quits it, unpins, upgrades, pins again, reopens it; `--check`, which `up` runs, names the apps behind their cask by the app's own version. `cask-update claude` is how the Claude desktop app is updated, its own updater being blocked |
-| `dot_local/bin/executable_claude-concierge`, `private_Library/LaunchAgents/local.claude-remote-control.plist.tmpl`, `dot_local/share/claude-concierge/` | `~/.local/bin/`, `~/Library/LaunchAgents/`, `~/.local/share/claude-concierge/` | mac, role session-host: the concierge, a launchd job that keeps Claude Code's Remote Control server running in tmux, and the folder its sessions start in; see [The concierge](#the-concierge-session-host) |
+| `dot_local/bin/executable_claude-concierge`, `private_Library/LaunchAgents/local.claude-remote-control.plist.tmpl` | `~/.local/bin/`, `~/Library/LaunchAgents/` | mac, role session-host: the concierge, a launchd job that keeps Claude Code's Remote Control server running in tmux; see [The concierge](#the-concierge-session-host) |
 | `dot_config/claude-desktop/block-auto-updates.mobileconfig` | `~/.config/claude-desktop/` | mac: the configuration profile that blocks the Claude desktop app's own updater; installed once, by hand |
 | `dot_local/bin/executable_vaults` | `~/.local/bin/vaults` | one status line per Obsidian vault (changes, commits to push or pull, last commit) and `vaults pull` for all of them; POSIX sh, not on linux-minimal |
 | `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG` and `~/.local/bin` for every zsh, coding agents' and ssh commands' included; on a `docker-engine` machine also the Homebrew PATH that ssh commands need |
@@ -275,14 +275,11 @@ Remote Control until someone sends it a message. The concierge is a command-line
 Claude Code that does not depend on the app. launchd keeps `claude-concierge`
 running (the job `local.claude-remote-control`), which keeps Claude Code's Remote
 Control server, `claude remote-control --name concierge`, running in a tmux
-session of its own, with the permission mode `auto` for the sessions it spawns.
-Those sessions start in a folder of their own, `~/.local/share/claude-concierge`,
-which the dotfiles create with an `AGENTS.md` saying what they are for: being a
-folder no other session uses, it gives them an agent memory of their own (Claude
-Code keys memory by folder). When the server exits, it gives up after about ten
-minutes offline, launchd starts it again; `up` restarts it after the Claude Code
-cask moves. It runs in a clean environment: nothing of the shell that started it,
-such as an `ANTHROPIC_API_KEY`, which would block Remote Control.
+session of its own, in `~/Developer`, with the permission mode `auto` for the
+sessions it spawns. When the server exits, it gives up after about ten minutes
+offline, launchd starts it again; `up` restarts it after the Claude Code cask
+moves. It runs in a clean environment: nothing of the shell that started it, such
+as an `ANTHROPIC_API_KEY`, which would block Remote Control.
 
 On a Mac that takes the role, once:
 
@@ -292,10 +289,10 @@ On a Mac that takes the role, once:
    the next `up`: `brew uninstall --cask claude-code@latest && brew install --cask
    claude-code`. Then `up`. (A new Mac that has the role from its first `chezmoi
    init` gets the stable cask straight away.)
-2. In a terminal of your own, `cd ~/.local/share/claude-concierge` and run
-   `claude`: trust that folder and sign in with `/login`. Remote Control needs that
-   full sign-in (a token from `claude setup-token` cannot host it), and an
-   unattended start in a folder never trusted exits with "Workspace not trusted".
+2. In a terminal of your own, `cd ~/Developer` and run `claude`: trust that folder
+   and sign in with `/login`. Remote Control needs that full sign-in (a token from
+   `claude setup-token` cannot host it), and an unattended start in a folder never
+   trusted exits with "Workspace not trusted".
 3. `claude-concierge start` loads the job, and launchd loads it at every login
    after that. Then `claude-concierge attach` once, to answer anything Remote
    Control asks the first time (`C-b d` leaves it running).
