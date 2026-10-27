@@ -311,6 +311,9 @@ left alone. `kcx env` prints it for any other shell.
   port-forward. Its kubeconfig holds no credentials and stays in place through the
   shell's own startup files, and the prompt keeps the `(READ-ONLY)` context in sight
   until the shell is left.
+- `kcx shell NAME` opens a shell of its own: `kcx NAME`, `kcx ns` and kubectl's
+  config changes inside it stay inside it, while every other shell keeps the shared
+  context; the prompt always shows the shell's context.
 
 **Agents** share one current context with every other shell, so a switch made in one
 session points kubectl in all the others at a different cluster. They name the

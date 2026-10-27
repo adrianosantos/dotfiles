@@ -1160,9 +1160,9 @@
   #############[ kubecontext: current kubernetes context (https://kubernetes.io/) ]#############
   # Show kubecontext only when the command you are typing invokes one of these tools
   # (aliases resolve: k, kc, kcc, kn and knc count through kubecolor and kcx). Inside a
-  # kcx read-only shell (KCX_RO set) it is always shown, so the "(READ-ONLY)" context
-  # stays in sight until that shell is left.
-  if [[ -z ${KCX_RO-} ]]; then
+  # kcx read-only shell (KCX_RO set) or a kcx shell (KCX_SHELL set) it is always shown,
+  # so the shell's own context, "(READ-ONLY)" or not, stays in sight until it is left.
+  if [[ -z ${KCX_RO-} && -z ${KCX_SHELL-} ]]; then
     typeset -g POWERLEVEL9K_KUBECONTEXT_SHOW_ON_COMMAND='kubectl|kubecolor|kcx|kc|kcc|kn|knc|helm|oc|istioctl|kogito|k9s|helmfile|flux|fluxctl|stern'
   fi
 
