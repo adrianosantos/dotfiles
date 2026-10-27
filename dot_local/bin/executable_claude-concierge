@@ -23,7 +23,8 @@
 #   claude-concierge run|serve launchd's entry point and the tmux session's
 #
 # Before the first `start`, once per Mac and in a terminal of your own: run
-# `claude` in the concierge's folder, trust that folder and sign in with /login.
+# `claude` in the concierge's folder, ~/.local/share/claude-concierge, which the
+# dotfiles create on a session host, trust that folder and sign in with /login.
 # Remote Control needs that full sign-in (a `claude setup-token` token cannot host
 # it), and an unattended start in a folder never trusted exits with "Workspace not
 # trusted". Until then `serve` fails, says so in the log and waits before the next
@@ -34,7 +35,8 @@ LABEL=local.claude-remote-control
 SOCKET=${CONCIERGE_TMUX_SOCKET:-concierge}     # tmux -L name, separate from yours
 SESSION=concierge
 NAME=${CONCIERGE_NAME:-concierge}              # shown in claude.ai/code
-DIR=${CONCIERGE_DIR:-$HOME/Developer}          # its folder: trusted, never $HOME
+DIR=${CONCIERGE_DIR:-$HOME/.local/share/claude-concierge}  # its own folder, trusted
+                                               # once: never $HOME, never ~/Developer
 MODE=${CONCIERGE_PERMISSION_MODE:-auto}        # for the sessions it spawns
 BACKOFF=${CONCIERGE_BACKOFF:-300}              # seconds to wait after a failed start
 LOG=${CONCIERGE_LOG:-$HOME/Library/Logs/claude-concierge.log}
