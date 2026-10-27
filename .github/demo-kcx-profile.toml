@@ -1,0 +1,38 @@
+# kcx's README demo profile, as kcx's .github/demo-setup.sh writes it (the example's
+# acme platform), for the last command of this repo's demo, which reads it through
+# KCX_PROFILES. chezmoi ignores .github, so it never reaches a home.
+
+[provider.acme]
+command  = ["acme", "get-kubeconfig", "{host}", "-u", "{user}", "-c", "{out}"]
+secret   = "acme-secret"
+host     = "{name}.k8s.acme.example"
+user     = ["{env.ACME_USER}", "{env.USER}"]
+rejected = "401|access_denied|invalid username or password"
+
+[group.production]
+label    = "Production"
+provider = "acme"
+color    = "red"
+readonly = true
+
+[group.lab]
+label    = "Lab"
+provider = "acme"
+color    = "green"
+
+[cluster.prod1]
+group   = "production"
+site    = "austin"
+aliases = ["main"]
+
+[cluster.prod2]
+group = "production"
+site  = "atlanta"
+
+[cluster.office2-lab]
+group = "lab"
+site  = "bastrop"
+
+[cluster.office7-lab]
+group = "lab"
+site  = "bastrop"
