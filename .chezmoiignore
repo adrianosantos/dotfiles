@@ -84,11 +84,13 @@ ensure-ssh-include.sh
 .local/bin/cask-update
 {{- end }}
 {{ if not (and (eq .machine "mac-personal") (has "session-host" $roles) (not (has "docker-engine" $roles))) -}}
-# The concierge runs only on a session host: its launchd job and the script the job
-# runs. Everywhere else ~/Library stays out of chezmoi's hands entirely, so its mode
-# (0700 on a Mac) is never touched; a lab node runs no sessions.
+# The concierge runs only on a session host: its launchd job, the script the job
+# runs and the folder its sessions start in. Everywhere else ~/Library stays out of
+# chezmoi's hands entirely, so its mode (0700 on a Mac) is never touched; a lab node
+# runs no sessions.
 Library
 .local/bin/claude-concierge
+.config/claude-concierge
 {{- end }}
 {{ $owner := false }}{{ if and (eq .machine "mac-personal") (has "secrets" $roles) (not (has "docker-engine" $roles)) }}{{ if hasKey . "signingkey" }}{{ if .signingkey }}{{ $logbook := stat (joinPath .chezmoi.homeDir "vaults" "logbook") }}{{ if $logbook }}{{ if $logbook.isDir }}{{ $owner = true }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
 {{ if not $owner -}}
