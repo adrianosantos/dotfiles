@@ -471,6 +471,23 @@ up() {
   ( unset GITLAB_TOKEN MISE_GITLAB_TOKEN
     mise install && mise upgrade "${_mise_skip[@]}" && mise prune -y )
   tools
+  # Ghostty, when `up` runs in it: brew quits an app before it upgrades it and opens
+  # it again after, but never the app brew itself runs in, so the new Ghostty lands
+  # on disk while the open one, every window of it, keeps the old version until it
+  # is quit. Ghostty gives its shells its version, TERM_PROGRAM_VERSION: compare it
+  # with the installed app's, read from the Info.plist itself (`defaults` can serve
+  # a cached copy), and say so on every `up` until Ghostty is reopened. Plain release
+  # numbers only (a tip build's version carries its commit), and not over ssh, where
+  # Ghostty forwards these variables but this machine's app is not the terminal.
+  if [[ ${TERM_PROGRAM:l} == ghostty && -n $TERM_PROGRAM_VERSION && -z $SSH_CONNECTION ]]; then
+    local _gh_have=$(plutil -extract CFBundleShortVersionString raw -o - \
+      /Applications/Ghostty.app/Contents/Info.plist 2>/dev/null)
+    autoload -Uz is-at-least
+    if [[ $_gh_have == <->.<->.<-> && $TERM_PROGRAM_VERSION == <->.<->.<-> ]] &&
+       ! is-at-least "$_gh_have" "$TERM_PROGRAM_VERSION"; then
+      echo "up: Ghostty $_gh_have is installed, but this window runs $TERM_PROGRAM_VERSION: quit Ghostty (Cmd+Q) and reopen it."
+    fi
+  fi
   # A Mac that hosts Claude Code Remote Control from a launchd job runs the `claude`
   # binary as a long-lived process. `brew upgrade` above swaps
   # that binary underneath it: the server keeps the old code in memory while every
