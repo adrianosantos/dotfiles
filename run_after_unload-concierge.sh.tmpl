@@ -1,0 +1,26 @@
+{{- $roles := list }}{{ if hasKey . "roles" }}{{ $roles = .roles }}{{ end -}}
+{{ if and (eq .machine "mac-personal") (not (and (has "session-host" $roles) (not (has "docker-engine" $roles)))) -}}
+#!/usr/bin/env bash
+# Unload the concierge's launchd job on a Mac that is not a session host.
+#
+# When a Mac drops the role session-host, .chezmoiremove takes the job's plist,
+# ~/Library/LaunchAgents/local.claude-remote-control.plist, so launchd no longer
+# starts the concierge at login. A job loaded before that keeps running until the
+# next logout: this unloads it, and the concierge's own TERM trap stops its tmux
+# server. The concierge's script, its folder and its sign-in stay: give the role
+# back and run `claude-concierge start` to have it again.
+#
+# A plain run_after_ script, so it runs at every apply, after the plist is gone.
+# QUIET BY DESIGN: it prints only when it unloads something.
+set -eu
+
+label=local.claude-remote-control
+target="gui/$(id -u)/$label"
+
+launchctl print "$target" >/dev/null 2>&1 || exit 0
+if launchctl bootout "$target" 2>/dev/null; then
+  echo ">>> not a session host: unloaded the concierge's launchd job ($label)"
+else
+  echo ">>> WARN: could not unload $label; run: launchctl bootout $target"
+fi
+{{ end -}}

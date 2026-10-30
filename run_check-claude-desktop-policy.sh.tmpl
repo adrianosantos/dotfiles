@@ -1,5 +1,6 @@
 {{- $lab := false -}}{{- if hasKey . "roles" }}{{ $lab = has "docker-engine" .roles }}{{ end -}}
-{{ if and (eq .machine "mac-personal") (not $lab) -}}
+{{- $auto := false -}}{{- if hasKey . "claude_desktop_auto_updates" }}{{ $auto = eq (toString .claude_desktop_auto_updates) "true" }}{{ end -}}
+{{ if and (eq .machine "mac-personal") (not $lab) (not $auto) -}}
 #!/usr/bin/env bash
 # Check that the Claude desktop app's own updater is blocked.
 #
@@ -20,7 +21,9 @@
 # installs it.
 #
 # A plain run_ script, so the check runs on every apply. The lab node has no
-# desktop app and is skipped. QUIET BY DESIGN: it prints only when something is off.
+# desktop app and is skipped, and so is a Mac whose user lets the app update
+# itself: `claude_desktop_auto_updates = true` under [data] in
+# ~/.config/chezmoi/chezmoi.toml. QUIET BY DESIGN: it prints only when something is off.
 set -eu
 
 domain=com.anthropic.claudefordesktop
