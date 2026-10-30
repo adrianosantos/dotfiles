@@ -96,7 +96,8 @@ so it cannot list something that is not actually installed.
 | `run_install-devin.sh.tmpl` | - | Devin CLI, installed when missing (WSL; linux-minimal with the `devin` extra) |
 | `run_install-claude-code.sh.tmpl` | - | Claude Code, installed when missing with its native installer (WSL; linux-minimal with the `claude` extra) |
 | `run_setup-docker-cli.sh.tmpl` | - | docker CLI against rootless Podman + self-updating `dhi`/`scout` plugins (WSL) |
-| `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac) |
+| `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac); skipped where the machine's data sets `claude_desktop_auto_updates = true` |
+| `run_after_unload-concierge.sh.tmpl` | - | mac, without the role session-host: unloads the concierge's launchd job if it still runs, once `.chezmoiremove` has taken its plist |
 | `run_pin-self-updating-casks.sh.tmpl` | - | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
 | `gen-tools.py` | `TOOLS.md` | Regenerates the tool inventory; `--check` fails if the file is stale |
 | `.chezmoi.toml.tmpl` | chezmoi config | Prompts once on init: the machine, and for linux-minimal a bigger filesystem and optional extras |
@@ -267,6 +268,12 @@ in `alias:hostname` pairs. The hostnames stay in your own config rather than in
 this repo, so a public fork carries the structure and none of your addresses.
 The alias half can hold several names separated by spaces.
 
+These dotfiles block the Claude desktop app's own updater and check on every
+apply that the profile doing so is in force (the app relaunches to update, and
+that drops the sessions it hosts). A Mac whose user lets the app update itself
+sets `claude_desktop_auto_updates = true` under `[data]` in the same file, and
+the check stays quiet there.
+
 ### The concierge (session-host)
 
 The Claude desktop app hosts interactive Claude Code sessions, and Remote Control
@@ -305,6 +312,14 @@ On a Mac that takes the role, once:
 On a new Mac with the role, chezmoi writes the job before step 2 can happen, so
 the job may start at a login before the first sign-in: it fails, says so in its
 log and tries again every few minutes. That is expected, not a fault.
+
+To take the role away, remove `session-host` from `roles_input`, run `chezmoi
+init`, and swap the casks back before the next `up`: `brew uninstall --cask
+claude-code && brew install --cask claude-code@latest`. That `up`'s apply
+removes the job's plist (`.chezmoiremove`), so launchd no longer starts the
+concierge at login, and `run_after_unload-concierge.sh` unloads a job still
+running. The concierge's script, its folder and its sign-in stay, for the day
+the role comes back.
 
 ## Kubeconfigs (kcx)
 

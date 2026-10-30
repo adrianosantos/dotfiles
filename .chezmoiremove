@@ -1,3 +1,12 @@
-# Targets chezmoi removes on apply. The bash kcx 1.0 these dotfiles installed on
-# the Macs until October 2026, replaced by the Go kcx that mise installs.
+{{- $roles := list }}{{ if hasKey . "roles" }}{{ $roles = .roles }}{{ end -}}
+# Targets chezmoi removes on apply (chezmoi reads this file as a template). The
+# bash kcx 1.0 these dotfiles installed on the Macs until October 2026, replaced
+# by the Go kcx that mise installs.
 .local/bin/kcx
+{{ if and (eq .machine "mac-personal") (not (and (has "session-host" $roles) (not (has "docker-engine" $roles)))) -}}
+# The concierge's launchd job, on a personal Mac that is not, or no longer, a
+# session host. .chezmoiignore leaves ~/Library alone there, so a Mac that drops
+# the role would keep the job's plist, and launchd would start the concierge at
+# every login. run_after_unload-concierge.sh unloads a job that still runs.
+Library/LaunchAgents/local.claude-remote-control.plist
+{{ end -}}
