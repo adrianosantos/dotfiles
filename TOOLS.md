@@ -357,6 +357,7 @@ mise from `dot_config/mise/config.toml.tmpl` on a host with no package manager: 
 | [stern](https://github.com/stern/stern) | Tail multiple Kubernetes pods & their containers |
 | [kustomize](https://github.com/kubernetes-sigs/kustomize) | Template-free customization of Kubernetes YAML manifests |
 | [kcx](https://github.com/junior/kcx) | One kubeconfig file per cluster: contexts, namespaces, cluster profiles, a read-only shell for AI tools |
+| [k10s](https://github.com/p10node/k10s) | Kubernetes TUI you can click: search, logs, exec and port-forward |
 
 ### Dev utilities
 
