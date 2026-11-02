@@ -139,6 +139,7 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [docker-desktop](https://www.docker.com/products/docker-desktop) | App to build and share containerised applications and microservices |
 | [freelens](https://freelens.app/) | Kubernetes IDE |
 | [openlens](https://github.com/MuhammedKalkan/OpenLens/) | Open source build of Lens Kubernetes IDE |
+| [stratoshark](https://stratoshark.org/) | System calls and log messages analyzer |
 
 ### Casks: communication + productivity
 
@@ -182,7 +183,6 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [claude-code@latest](https://claude.com/product/claude-code) | Terminal-based AI coding assistant |
 | [codex](https://github.com/openai/codex) | OpenAI's coding agent that runs in your terminal |
 | [grammarly-desktop](https://www.grammarly.com/desktop) | Grammarly for desktop |
-| [microsoft-auto-update](https://docs.microsoft.com/officeupdates/release-history-microsoft-autoupdate) | Provides updates to various Microsoft products |
 | [sbx](https://github.com/docker/sbx-releases) | Build, run, and govern agents across the software development lifecycle |
 | [lm-studio](https://lmstudio.ai/) | Discover, download, and run local LLMs |
 
