@@ -156,8 +156,11 @@ cask "visual-studio-code"
 # --- Casks: browsers ---
 cask "firefox"
 cask "google-chrome"
-cask "google-chrome@canary"   # renamed upstream from google-chrome-canary (old name 404s)
-cask "tor-browser"
+# Five casks left this file on 2026-11-01, the owner's call at the Mac Studio's
+# stand-up: google-chrome@canary, tor-browser (a privacy browser can run in a
+# sandbox when one is needed), stratoshark, gitkraken and jetbrains-toolbox. A Mac
+# set up before then may still have them, and a `brew bundle dump` from it would
+# bring them back.
 
 # --- Casks: network ---
 # wifiman installs via pkg (one sudo prompt the first time).
@@ -182,7 +185,6 @@ cask "wifiman"
 cask "docker-desktop"
 cask "freelens"
 cask "openlens"
-cask "stratoshark"
 
 # --- Casks: communication + productivity ---
 # 1Password: the direct-download build (not the App Store one), adopted in place.
@@ -212,7 +214,6 @@ cask "monokle"
 cask "dash"
 cask "drawio"
 cask "github"
-cask "gitkraken"
 cask "gpg-suite"
 # Homebrew's own GUI (BrewUI), new with Homebrew 7. It needs macOS 26 or later, which
 # every desktop here runs; the Intel iMac is a lab node and gets no GUI casks. A desktop
@@ -220,7 +221,6 @@ cask "gpg-suite"
 # requirement. Not self-updating, so `up`'s `brew upgrade` moves it.
 cask "homebrew-app"
 cask "httpie-desktop"
-cask "jetbrains-toolbox"
 cask "kaleidoscope"
 cask "mitmproxy"
 cask "ngrok"

@@ -125,8 +125,6 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | --- | --- |
 | [firefox](https://www.mozilla.org/firefox/) | Web browser |
 | [google-chrome](https://www.google.com/chrome/) | Web browser |
-| [google-chrome@canary](https://www.google.com/chrome/canary/) | Web browser |
-| [tor-browser](https://www.torproject.org/) | Web browser focusing on security |
 
 ### Casks: network
 
@@ -141,7 +139,6 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [docker-desktop](https://www.docker.com/products/docker-desktop) | App to build and share containerised applications and microservices |
 | [freelens](https://freelens.app/) | Kubernetes IDE |
 | [openlens](https://github.com/MuhammedKalkan/OpenLens/) | Open source build of Lens Kubernetes IDE |
-| [stratoshark](https://stratoshark.org/) | System calls and log messages analyzer |
 
 ### Casks: communication + productivity
 
@@ -166,11 +163,9 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [dash](http://gondor.apana.org.au/~herbert/dash/) | POSIX-compliant descendant of NetBSD's ash (the Almquist SHell) |
 | [drawio](https://www.diagrams.net/) | Online diagram software |
 | [github](https://desktop.github.com/) | Desktop client for GitHub repositories |
-| [gitkraken](https://www.gitkraken.com/) | Git client focusing on productivity |
 | [gpg-suite](https://gpgtools.org/) | Tools to protect your emails and files |
 | [homebrew-app](https://github.com/Homebrew/BrewUI) | Homebrew's official GUI |
 | [httpie-desktop](https://httpie.io/product) | Testing client for REST, GraphQL, and HTTP APIs |
-| [jetbrains-toolbox](https://www.jetbrains.com/toolbox-app/) | JetBrains tools manager |
 | [kaleidoscope](https://kaleidoscope.app/) | Spot and merge differences in text and image files or folders |
 | [mitmproxy](https://mitmproxy.org/) | Intercept, modify, replay, save HTTP/S traffic |
 | [ngrok](https://ngrok.com/) | Reverse proxy, secure introspectable tunnels to localhost |
