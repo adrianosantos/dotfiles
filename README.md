@@ -79,7 +79,6 @@ so it cannot list something that is not actually installed.
 | `dot_default-python-packages` | mise | Default pip packages for every Python (on linux-minimal only with the `python` extra) |
 | `dot_local/bin/executable_tx` | `~/.local/bin/tx` | curl-only S3 file-transfer client (pairs with [s3tx](https://github.com/junior/s3tx)) |
 | `dot_local/bin/executable_cask-update` | `~/.local/bin/cask-update` | mac: updates a pinned cask's app by hand, after a yes: quits it, unpins, upgrades, pins again, reopens it; `--check`, which `up` runs, names the apps behind their cask by the app's own version. `cask-update claude` is how the Claude desktop app is updated, its own updater being blocked |
-| `dot_local/bin/executable_claude-concierge`, `private_Library/LaunchAgents/local.claude-remote-control.plist.tmpl`, `dot_config/claude-concierge/` | `~/.local/bin/`, `~/Library/LaunchAgents/`, `~/.config/claude-concierge/` | mac, role session-host: the concierge, a launchd job that keeps Claude Code's Remote Control server running in tmux, and the folder its sessions start in; see [The concierge](#the-concierge-session-host) |
 | `dot_config/claude-desktop/block-auto-updates.mobileconfig` | `~/.config/claude-desktop/` | mac: the configuration profile that blocks the Claude desktop app's own updater; installed once, by hand |
 | `dot_local/bin/executable_vaults` | `~/.local/bin/vaults` | one status line per Obsidian vault (changes, commits to push or pull, last commit) and `vaults pull` for all of them; POSIX sh, not on linux-minimal |
 | `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG` and `~/.local/bin` for every zsh, coding agents' and ssh commands' included; on a `docker-engine` machine also the Homebrew PATH that ssh commands need |
@@ -97,7 +96,7 @@ so it cannot list something that is not actually installed.
 | `run_install-claude-code.sh.tmpl` | - | Claude Code, installed when missing with its native installer (WSL; linux-minimal with the `claude` extra) |
 | `run_setup-docker-cli.sh.tmpl` | - | docker CLI against rootless Podman + self-updating `dhi`/`scout` plugins (WSL) |
 | `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac); skipped where the machine's data sets `claude_desktop_auto_updates = true` |
-| `run_after_unload-concierge.sh.tmpl` | - | mac, without the role session-host: unloads the concierge's launchd job if it still runs, once `.chezmoiremove` has taken its plist |
+| `run_after_unload-concierge.sh.tmpl` | - | mac: unloads the concierge's launchd job where it still runs, once `.chezmoiremove` has taken its plist, script and folder (the concierge was dropped on 2026-11-01) |
 | `run_pin-self-updating-casks.sh.tmpl` | - | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
 | `gen-tools.py` | `TOOLS.md` | Regenerates the tool inventory; `--check` fails if the file is stale |
 | `.chezmoi.toml.tmpl` | chezmoi config | Prompts once on init: the machine, and for linux-minimal a bigger filesystem and optional extras |
@@ -247,7 +246,7 @@ machine is FOR, not by what happens to be installed on it:
 | role | pick it when | what it turns on |
 | --- | --- | --- |
 | *(blank)* | an ordinary workstation, which is the common case | nothing |
-| `session-host` | the machine runs long-lived agent sessions others connect to | the concierge (below): a launchd job that keeps Claude Code's Remote Control server running, the stable Claude Code cask instead of `claude-code@latest`, and `up` restarts the job after that cask is upgraded |
+| `session-host` | the machine runs long-lived agent sessions others connect to | the stable Claude Code cask instead of `claude-code@latest`; the sessions themselves are the Claude desktop app's ([Hosting sessions](#hosting-sessions-session-host), below) |
 | `docker-engine` | other machines run builds on this one's Docker engine over ssh | a PATH line in `~/.zshenv`, so a non-interactive `ssh host command` can find `docker`; `kcx add` refuses there, a lab node holding no credentials |
 | `secrets` | the machine holds credentials provisioned from a password manager | the templates that write those files |
 
@@ -274,52 +273,28 @@ that drops the sessions it hosts). A Mac whose user lets the app update itself
 sets `claude_desktop_auto_updates = true` under `[data]` in the same file, and
 the check stays quiet there.
 
-### The concierge (session-host)
+### Hosting sessions (session-host)
 
-The Claude desktop app hosts interactive Claude Code sessions, and Remote Control
-lets the phone reach them, until the app relaunches: then each session stays off
-Remote Control until someone sends it a message. The concierge is a command-line
-Claude Code that does not depend on the app. launchd keeps `claude-concierge`
-running (the job `local.claude-remote-control`), which keeps Claude Code's Remote
-Control server, `claude remote-control --name concierge`, running in a tmux
-session of its own, with the permission mode `auto` for the sessions it spawns.
-Those sessions start in a folder of their own, `~/.config/claude-concierge`,
-which the dotfiles create with an `AGENTS.md` saying what they are for: being a
-folder no other session uses, it gives them an agent memory of their own (Claude
-Code keys memory by folder). When the server exits, it gives up after about ten
-minutes offline, launchd starts it again; `up` restarts it after the Claude Code
-cask moves. It runs in a clean environment: nothing of the shell that started it,
-such as an `ANTHROPIC_API_KEY`, which would block Remote Control.
+The Claude desktop app hosts the long-lived Claude Code sessions, and Remote
+Control lets the phone reach them. Two of the app's settings, under Claude Code,
+make a Mac a session host; set them once by hand: "Connect new sessions to Remote
+Control" and "Let your phone and claude.ai start sessions here". After the app
+relaunches, each session stays off Remote Control until it gets a message; a
+session started from the phone can send one, since a session can list and
+message the Mac's other sessions. The app's own updater is blocked (the profile
+above), so it relaunches only when you update it with `cask-update claude`.
 
-On a Mac that takes the role, once:
+The role itself only picks the stable Claude Code cask over `claude-code@latest`.
+`brew bundle` never removes a cask, so a Mac that takes the role swaps them once
+by hand before the next `up`: `brew uninstall --cask claude-code@latest && brew
+install --cask claude-code`, and the other way round when it drops the role. A
+new Mac that has the role from its first `chezmoi init` gets the stable cask
+straight away.
 
-1. Add `session-host` to the `roles_input` line of `~/.config/chezmoi/chezmoi.toml`
-   and run `chezmoi init`. The Brewfile now wants the stable cask, which conflicts
-   with the latest one, and `brew bundle` never removes a cask, so swap them before
-   the next `up`: `brew uninstall --cask claude-code@latest && brew install --cask
-   claude-code`. Then `up`. (A new Mac that has the role from its first `chezmoi
-   init` gets the stable cask straight away.)
-2. In a terminal of your own, `cd ~/.config/claude-concierge` and run
-   `claude`: trust that folder and sign in with `/login`. Remote Control needs that
-   full sign-in (a token from `claude setup-token` cannot host it), and an
-   unattended start in a folder never trusted exits with "Workspace not trusted".
-3. `claude-concierge start` loads the job, and launchd loads it at every login
-   after that. Then `claude-concierge attach` once, to answer anything Remote
-   Control asks the first time (`C-b d` leaves it running).
-   `claude-concierge status` shows the job, the tmux session and the log,
-   `~/Library/Logs/claude-concierge.log`.
-
-On a new Mac with the role, chezmoi writes the job before step 2 can happen, so
-the job may start at a login before the first sign-in: it fails, says so in its
-log and tries again every few minutes. That is expected, not a fault.
-
-To take the role away, remove `session-host` from `roles_input`, run `chezmoi
-init`, and swap the casks back before the next `up`: `brew uninstall --cask
-claude-code && brew install --cask claude-code@latest`. That `up`'s apply
-removes the job's plist (`.chezmoiremove`), so launchd no longer starts the
-concierge at login, and `run_after_unload-concierge.sh` unloads a job still
-running. The concierge's script, its folder and its sign-in stay, for the day
-the role comes back.
+Until 2026-11-01 the role also ran a concierge: a command-line Claude Code under
+launchd that kept Remote Control reachable when the app was not. The app's own
+remote start made it redundant. An apply removes its launchd job, its script and
+its folder from a Mac that still has them, and unloads a job still running.
 
 ## Kubeconfigs (kcx)
 

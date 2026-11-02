@@ -387,13 +387,6 @@ up() {
     echo
   fi
   rm -f "$_cmerr"
-  # Claude Code's cask: claude-code@latest, claude-code (the stable channel) on a
-  # session host, whose concierge runs it, or what this machine's packages.toml
-  # replaces it with (empty when it skips it). The Remote Control restart at the end
-  # follows it.
-{{- $cc := "claude-code@latest" }}{{ if hasKey . "roles" }}{{ if and (has "session-host" .roles) (not (has "docker-engine" .roles)) }}{{ $cc = "claude-code" }}{{ end }}{{ end }}
-  local _cc_cask={{ includeTemplate "package" (dict "names" $cc "data" . "tokens" true) | squote }} _cc_before=
-  [[ -n "$_cc_cask" ]] && _cc_before=$(brew list --cask --versions "$_cc_cask" 2>/dev/null)
   if command -v brew &>/dev/null; then
     # A package this machine skips or replaces (a "# skipped by" or "# replaced by"
     # line in ~/.Brewfile) can still be installed from before: brew bundle never
@@ -489,21 +482,6 @@ up() {
     if [[ $_gh_have == <->.<->.<-> && $TERM_PROGRAM_VERSION == <->.<->.<-> ]] &&
        ! is-at-least "$_gh_have" "$TERM_PROGRAM_VERSION"; then
       echo "up: Ghostty $_gh_have is installed, but this window runs $TERM_PROGRAM_VERSION: quit Ghostty (Cmd+Q) and reopen it."
-    fi
-  fi
-  # A Mac that hosts Claude Code Remote Control from a launchd job runs the `claude`
-  # binary as a long-lived process. `brew upgrade` above swaps
-  # that binary underneath it: the server keeps the old code in memory while every
-  # session it spawns from then on runs the new one. Restart the job, but only when
-  # the cask really changed and only if the job is loaded on this machine. Last step
-  # on purpose: when `up` itself runs inside a Remote Control session the restart
-  # ends that session, so everything else must already be finished.
-  if [[ -n "$_cc_before" ]]; then
-    local _cc_after=$(brew list --cask --versions "$_cc_cask" 2>/dev/null)
-    local _rc="gui/$UID/${CLAUDE_RC_LABEL:-local.claude-remote-control}"
-    if [[ "$_cc_after" != "$_cc_before" ]] && launchctl print "$_rc" &>/dev/null; then
-      echo "up: $_cc_cask ${_cc_before##* } -> ${_cc_after##* }: restarting the Remote Control server${CLAUDECODE:+ (this session is hosted by it and will drop; reconnect in about 30s)}"
-      launchctl kickstart -k "$_rc"
     fi
   fi
   echo "up: done — run 'exec zsh' if dotfiles changed"
