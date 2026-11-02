@@ -32,10 +32,13 @@ set -eu
 #
 # ForkLift and Wireshark left the list on 2026-10-24: ForkLift now upgrades with
 # everything else in `up`, and Wireshark is no longer installed on these Macs.
+# Chrome Canary left it on 2026-11-01, with its cask, which the Brewfile no longer
+# declares; it stays the example above because it is why this script exists. A Mac
+# that still has it keeps the pin until `brew unpin --cask google-chrome@canary`.
 {{- /* Each name goes through this machine's packages.toml (README, "Work overlay"): a
        cask it skips is left out, one it replaces is pinned under the replacement's
        token. With no such file the list is exactly the one written here. */}}
-PINNED=({{ includeTemplate "package" (dict "names" "1password claude docker-desktop google-chrome google-chrome@canary obsidian" "data" . "tokens" true) }})
+PINNED=({{ includeTemplate "package" (dict "names" "1password claude docker-desktop google-chrome obsidian" "data" . "tokens" true) }})
 
 command -v brew >/dev/null 2>&1 || exit 0
 

@@ -34,16 +34,16 @@ fpath+=("${HOMEBREW_PREFIX}/share/zsh/site-functions" "${HOMEBREW_PREFIX}/share/
 ZSH_COMPDUMP="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump"
 [[ -d ${ZSH_COMPDUMP:h} ]] || mkdir -p ${ZSH_COMPDUMP:h}
 {{- if ne .machine "wsl-work" }}
-# Intel Homebrew lives in /usr/local, whose share/ directories are group-writable
-# BY DESIGN (drwxrwxr-x, group admin). compaudit calls that insecure, and compinit
-# then halts every interactive shell - every ssh login, on a box nobody sits at -
-# to ask whether to continue. Apple-silicon Homebrew (/opt/homebrew) is not
-# group-writable and never trips it, which is why only an Intel Mac shows this.
-# -u accepts those directories. Scoped to that one prefix so no other machine
-# loses the check; chmod would also work but comes back whenever brew recreates
-# a directory, and a prompt that reappears months later on a headless machine is
-# the worse failure.
-if [[ "${HOMEBREW_PREFIX:-}" == /usr/local ]]; then
+# Homebrew makes its share/ directory group-writable BY DESIGN (drwxrwxr-x, group
+# admin): Intel's in /usr/local, and Apple silicon's in /opt/homebrew can be too.
+# A fresh install on the Mac Studio was, on 2026-11-01; the MacBook's older one was
+# not, which is why only an Intel Mac had shown this before. compaudit calls that
+# insecure, and compinit then halts every interactive shell - every ssh login, on a
+# box nobody sits at - to ask whether to continue. -u accepts those directories.
+# Scoped to Homebrew's two prefixes so no other machine loses the check; chmod
+# would also work but comes back whenever brew recreates a directory, and a prompt
+# that reappears months later on a headless machine is the worse failure.
+if [[ "${HOMEBREW_PREFIX:-}" == /usr/local || "${HOMEBREW_PREFIX:-}" == /opt/homebrew ]]; then
   autoload -Uz compinit && compinit -u -d "$ZSH_COMPDUMP"
 else
   autoload -Uz compinit && compinit -d "$ZSH_COMPDUMP"
@@ -369,9 +369,12 @@ up() {
   # Keep chezmoi's stderr visible, but also look at it: the "config file
   # template has changed" warning is the moment you need to see your current
   # answers, not three commands later.
+  # `command cat`, here and below: the cat alias (bat) is expanded into this function
+  # when it is defined, and on a new Mac the first `up` runs before Homebrew has
+  # installed bat.
   local _cmerr; _cmerr=$(mktemp)
-  chezmoi update 2>"$_cmerr" || { cat "$_cmerr" >&2; rm -f "$_cmerr"; return 1 }
-  cat "$_cmerr" >&2
+  chezmoi update 2>"$_cmerr" || { command cat "$_cmerr" >&2; rm -f "$_cmerr"; return 1 }
+  command cat "$_cmerr" >&2
   if grep -q 'config file template has changed' "$_cmerr" 2>/dev/null; then
     echo
     echo "up: the chezmoi config template changed upstream, so this machine's config"
@@ -384,13 +387,6 @@ up() {
     echo
   fi
   rm -f "$_cmerr"
-  # Claude Code's cask: claude-code@latest, claude-code (the stable channel) on a
-  # session host, whose concierge runs it, or what this machine's packages.toml
-  # replaces it with (empty when it skips it). The Remote Control restart at the end
-  # follows it.
-{{- $cc := "claude-code@latest" }}{{ if hasKey . "roles" }}{{ if and (has "session-host" .roles) (not (has "docker-engine" .roles)) }}{{ $cc = "claude-code" }}{{ end }}{{ end }}
-  local _cc_cask={{ includeTemplate "package" (dict "names" $cc "data" . "tokens" true) | squote }} _cc_before=
-  [[ -n "$_cc_cask" ]] && _cc_before=$(brew list --cask --versions "$_cc_cask" 2>/dev/null)
   if command -v brew &>/dev/null; then
     # A package this machine skips or replaces (a "# skipped by" or "# replaced by"
     # line in ~/.Brewfile) can still be installed from before: brew bundle never
@@ -420,7 +416,7 @@ up() {
       # anything is outdated; running `up` is already that yes.
       HOMEBREW_NO_ASK=1 brew upgrade && brew cleanup
     else
-      cat "$_bundle"
+      command cat "$_bundle"
     fi
     rm -f "$_bundle"
   else
@@ -486,21 +482,6 @@ up() {
     if [[ $_gh_have == <->.<->.<-> && $TERM_PROGRAM_VERSION == <->.<->.<-> ]] &&
        ! is-at-least "$_gh_have" "$TERM_PROGRAM_VERSION"; then
       echo "up: Ghostty $_gh_have is installed, but this window runs $TERM_PROGRAM_VERSION: quit Ghostty (Cmd+Q) and reopen it."
-    fi
-  fi
-  # A Mac that hosts Claude Code Remote Control from a launchd job runs the `claude`
-  # binary as a long-lived process. `brew upgrade` above swaps
-  # that binary underneath it: the server keeps the old code in memory while every
-  # session it spawns from then on runs the new one. Restart the job, but only when
-  # the cask really changed and only if the job is loaded on this machine. Last step
-  # on purpose: when `up` itself runs inside a Remote Control session the restart
-  # ends that session, so everything else must already be finished.
-  if [[ -n "$_cc_before" ]]; then
-    local _cc_after=$(brew list --cask --versions "$_cc_cask" 2>/dev/null)
-    local _rc="gui/$UID/${CLAUDE_RC_LABEL:-local.claude-remote-control}"
-    if [[ "$_cc_after" != "$_cc_before" ]] && launchctl print "$_rc" &>/dev/null; then
-      echo "up: $_cc_cask ${_cc_before##* } -> ${_cc_after##* }: restarting the Remote Control server${CLAUDECODE:+ (this session is hosted by it and will drop; reconnect in about 30s)}"
-      launchctl kickstart -k "$_rc"
     fi
   fi
   echo "up: done — run 'exec zsh' if dotfiles changed"

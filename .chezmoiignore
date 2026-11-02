@@ -42,8 +42,6 @@ examples
 .config/kind
 # No Obsidian vaults are kept on these hosts, so nothing for `vaults` to show.
 .local/bin/vaults
-# k10s is not installed on these hosts, so its seeded config has nothing to configure.
-.k10s
 {{ $extras := list }}{{ if hasKey . "extras" }}{{ $extras = regexSplit "\\s*,\\s*" (trim .extras) -1 }}{{ end -}}
 {{ if not (has "python" $extras) -}}
 # mise reads this when it installs a Python, which happens only with that extra.
@@ -82,15 +80,6 @@ ensure-ssh-include.sh
 # Homebrew casks exist only on the personal Macs, so cask-update has nothing to do
 # anywhere else.
 .local/bin/cask-update
-{{- end }}
-{{ if not (and (eq .machine "mac-personal") (has "session-host" $roles) (not (has "docker-engine" $roles))) -}}
-# The concierge runs only on a session host: its launchd job, the script the job
-# runs and the folder its sessions start in. Everywhere else ~/Library stays out of
-# chezmoi's hands entirely, so its mode (0700 on a Mac) is never touched; a lab node
-# runs no sessions.
-Library
-.local/bin/claude-concierge
-.config/claude-concierge
 {{- end }}
 {{ $owner := false }}{{ if and (eq .machine "mac-personal") (has "secrets" $roles) (not (has "docker-engine" $roles)) }}{{ if hasKey . "signingkey" }}{{ if .signingkey }}{{ $logbook := stat (joinPath .chezmoi.homeDir "vaults" "logbook") }}{{ if $logbook }}{{ if $logbook.isDir }}{{ $owner = true }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
 {{ if not $owner -}}

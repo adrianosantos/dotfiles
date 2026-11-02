@@ -10,9 +10,10 @@
 {{- else -}}
 {{- if eq .machine "mac-personal" -}}
 {{- $lab := false -}}{{- if hasKey . "roles" }}{{ $lab = has "docker-engine" .roles }}{{ end -}}
-{{- /* A session host runs the concierge, a command-line Claude Code kept by launchd
-       (claude-concierge), so its CLI takes the stable channel: a bad release there
-       would break every session at once. A lab node runs no sessions. */ -}}
+{{- /* A session host's CLI takes the stable channel, the owner's choice: kept on
+       2026-11-01 when the concierge, the command-line Claude Code it was first
+       chosen for, was dropped (decision 0022 in the vault). A lab node runs no
+       sessions. */ -}}
 {{- $host := false -}}{{- if hasKey . "roles" }}{{ $host = and (has "session-host" .roles) (not $lab) }}{{ end -}}
 {{- /* An INTEL Mac. Homebrew stopped building Intel bottles in September 2026, so a
        formula with no bottle is compiled here, and a few of them drag in Rust and
@@ -156,8 +157,11 @@ cask "visual-studio-code"
 # --- Casks: browsers ---
 cask "firefox"
 cask "google-chrome"
-cask "google-chrome@canary"   # renamed upstream from google-chrome-canary (old name 404s)
-cask "tor-browser"
+# Five casks left this file on 2026-11-01, the owner's call at the Mac Studio's
+# stand-up: google-chrome@canary, tor-browser (a privacy browser can run in a
+# sandbox when one is needed), gitkraken, jetbrains-toolbox and
+# microsoft-auto-update (see microsoft-teams below). A Mac set up before then may
+# still have them, and a `brew bundle dump` from it would bring them back.
 
 # --- Casks: network ---
 # wifiman installs via pkg (one sudo prompt the first time).
@@ -182,6 +186,9 @@ cask "wifiman"
 cask "docker-desktop"
 cask "freelens"
 cask "openlens"
+# Stratoshark: Wireshark for system calls and log messages. It reads the .scap
+# captures that sysdig (`sysdig -w`) and Falco write, offline; a Mac cannot capture
+# its own system calls with it.
 cask "stratoshark"
 
 # --- Casks: communication + productivity ---
@@ -194,6 +201,8 @@ cask "1password"
 # Not pinned: this cask has no auto_updates, `brew upgrade` in `up` moves it.
 cask "1password-cli"
 cask "discord"
+# Teams does not need Microsoft AutoUpdate: its cask deselects AutoUpdate in Teams'
+# installer, and Teams updates itself.
 cask "microsoft-teams"
 cask "notion"
 # Obsidian: the reader for the vaults under ~/vaults, git-backed Markdown shared by
@@ -212,7 +221,6 @@ cask "monokle"
 cask "dash"
 cask "drawio"
 cask "github"
-cask "gitkraken"
 cask "gpg-suite"
 # Homebrew's own GUI (BrewUI), new with Homebrew 7. It needs macOS 26 or later, which
 # every desktop here runs; the Intel iMac is a lab node and gets no GUI casks. A desktop
@@ -220,7 +228,6 @@ cask "gpg-suite"
 # requirement. Not self-updating, so `up`'s `brew upgrade` moves it.
 cask "homebrew-app"
 cask "httpie-desktop"
-cask "jetbrains-toolbox"
 cask "kaleidoscope"
 cask "mitmproxy"
 cask "ngrok"
@@ -242,13 +249,12 @@ cask "claude"
 # tracks the same channel. NOTE the difference in who updates it: a Homebrew install does
 # not self-update, so `up`'s `brew upgrade` is what moves this one, while wsl-work's
 # native install updates itself in the background. A session host (role session-host)
-# takes the stable one, for its concierge; `brew bundle` never removes the other, so a
+# takes the stable one, the owner's choice; `brew bundle` never removes the other, so a
 # Mac that takes the role swaps them once by hand:
 #   brew uninstall --cask claude-code@latest && brew install --cask claude-code
 {{ if $host }}cask "claude-code"{{ else }}cask "claude-code@latest"{{ end }}
 cask "codex"
 cask "grammarly-desktop"
-cask "microsoft-auto-update"
 {{- if eq .chezmoi.arch "arm64" }}
 # Apple-silicon-only casks (their upstream ships no Intel build), gated on the
 # architecture rather than the machine name so an Intel Mac can share this

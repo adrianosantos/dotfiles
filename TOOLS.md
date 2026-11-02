@@ -125,8 +125,6 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | --- | --- |
 | [firefox](https://www.mozilla.org/firefox/) | Web browser |
 | [google-chrome](https://www.google.com/chrome/) | Web browser |
-| [google-chrome@canary](https://www.google.com/chrome/canary/) | Web browser |
-| [tor-browser](https://www.torproject.org/) | Web browser focusing on security |
 
 ### Casks: network
 
@@ -166,11 +164,9 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [dash](http://gondor.apana.org.au/~herbert/dash/) | POSIX-compliant descendant of NetBSD's ash (the Almquist SHell) |
 | [drawio](https://www.diagrams.net/) | Online diagram software |
 | [github](https://desktop.github.com/) | Desktop client for GitHub repositories |
-| [gitkraken](https://www.gitkraken.com/) | Git client focusing on productivity |
 | [gpg-suite](https://gpgtools.org/) | Tools to protect your emails and files |
 | [homebrew-app](https://github.com/Homebrew/BrewUI) | Homebrew's official GUI |
 | [httpie-desktop](https://httpie.io/product) | Testing client for REST, GraphQL, and HTTP APIs |
-| [jetbrains-toolbox](https://www.jetbrains.com/toolbox-app/) | JetBrains tools manager |
 | [kaleidoscope](https://kaleidoscope.app/) | Spot and merge differences in text and image files or folders |
 | [mitmproxy](https://mitmproxy.org/) | Intercept, modify, replay, save HTTP/S traffic |
 | [ngrok](https://ngrok.com/) | Reverse proxy, secure introspectable tunnels to localhost |
@@ -187,7 +183,6 @@ Homebrew from `dot_Brewfile.tmpl`, the handful of tools mise owns here (language
 | [claude-code@latest](https://claude.com/product/claude-code) | Terminal-based AI coding assistant |
 | [codex](https://github.com/openai/codex) | OpenAI's coding agent that runs in your terminal |
 | [grammarly-desktop](https://www.grammarly.com/desktop) | Grammarly for desktop |
-| [microsoft-auto-update](https://docs.microsoft.com/officeupdates/release-history-microsoft-autoupdate) | Provides updates to various Microsoft products |
 | [sbx](https://github.com/docker/sbx-releases) | Build, run, and govern agents across the software development lifecycle |
 | [lm-studio](https://lmstudio.ai/) | Discover, download, and run local LLMs |
 
@@ -357,6 +352,7 @@ mise from `dot_config/mise/config.toml.tmpl` on a host with no package manager: 
 | [stern](https://github.com/stern/stern) | Tail multiple Kubernetes pods & their containers |
 | [kustomize](https://github.com/kubernetes-sigs/kustomize) | Template-free customization of Kubernetes YAML manifests |
 | [kcx](https://github.com/junior/kcx) | One kubeconfig file per cluster: contexts, namespaces, cluster profiles, a read-only shell for AI tools |
+| [k10s](https://github.com/p10node/k10s) | Kubernetes TUI you can click: search, logs, exec and port-forward |
 
 ### Dev utilities
 
