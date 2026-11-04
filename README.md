@@ -278,8 +278,12 @@ the check stays quiet there.
 The Claude desktop app hosts the long-lived Claude Code sessions, and Remote
 Control lets the phone reach them. Two of the app's settings, under Claude Code,
 make a Mac a session host; set them once by hand: "Connect new sessions to Remote
-Control" and "Let your phone and claude.ai start sessions here". After the app
-relaunches, each session stays off Remote Control until it gets a message; a
+Control" and "Let your phone and claude.ai start sessions here". The second also
+needs a default folder, set in the same place, for the sessions the phone starts
+(`~/Developer` here); with none, the phone has nothing to start them in. Not every
+installation shows the second setting, even on the same app version; without it,
+the phone cannot start sessions on that Mac. After the app relaunches, each
+session stays off Remote Control until it gets a message; a
 session started from the phone can send one, since a session can list and
 message the Mac's other sessions. The app's own updater is blocked (the profile
 above), so it relaunches only when you update it with `cask-update claude`.
@@ -455,9 +459,8 @@ skip = ["lm-studio"]
 At the next apply, `~/.Brewfile` has `cask "acme/tap/claude-code", trusted:
 true` where `cask "claude-code@latest"` was, with a comment line saying what
 changed (`trusted: true` is how a Brewfile lets Homebrew load a cask from a
-third-party tap). `up` follows the new cask too: after it upgrades, `up`
-restarts a Remote Control server that runs from it, and a replaced cask that
-was pinned is pinned under its new name.
+third-party tap). `up` follows the new cask too: a replaced cask that was
+pinned is pinned under its new name.
 
 - **Names** are the ones the public files use, or the ones TOOLS.md shows,
   without a tap or backend prefix: `claude-code@latest` is the Mac's cask,
