@@ -52,7 +52,7 @@ never applies this file or CLAUDE.md to a home folder: `.chezmoiignore` lists bo
 
 - Never rename `mac-personal`, `wsl-work` or `linux-minimal` after a machine, and
   never make a template branch on a machine's name. What a machine does is a role
-  (`session-host`, `docker-engine`, `secrets`); what it has of its own goes in the
+  (`session-host`, `docker-engine`, `secrets`, `appliance`); what it has of its own goes in the
   places above.
 - Never remove a profile, even one you do not use: upstream keeps all three, and a
   fork without one no longer merges upstream cleanly.
@@ -97,7 +97,8 @@ Upstream only: the maintainer's changes, and changes proposed to upstream.
   missing key stops the template.
 - Render every profile before and after the change, and compare: mac-personal on
   Apple silicon and on Intel (`--override-data '{"chezmoi":{"arch":"amd64"}}'`), a
-  lab node (role `docker-engine`), wsl-work, linux-minimal with and without extras.
+  lab node (role `docker-engine`), an appliance (role `appliance`), wsl-work,
+  linux-minimal with and without extras.
   Use a throwaway config for each,
   `chezmoi --config THROWAWAY.toml --source TREE execute-template < FILE`, with
   `--source` at the tree being rendered: the Brewfile and the mise config render

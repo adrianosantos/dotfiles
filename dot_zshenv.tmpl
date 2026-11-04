@@ -10,9 +10,9 @@
 # Keep this file minimal and free of side effects: it runs for every zsh, scripts
 # included. Environment only, nothing interactive, no output: docker's ssh
 # transport carries its data over the stdout of a command started this way.
-{{- if has "docker-engine" $roles }}
+{{- if or (has "docker-engine" $roles) (has "appliance" $roles) }}
 
-# --- PATH for commands run over ssh (role: docker-engine) ---
+# --- PATH for commands run over ssh (role: {{ if has "appliance" $roles }}appliance{{ else }}docker-engine{{ end }}) ---
 # macOS builds the default PATH with path_helper, run from /etc/profile, and only
 # LOGIN shells source that. So a non-interactive ssh command arrives with
 #   PATH=/usr/bin:/bin:/usr/sbin:/sbin

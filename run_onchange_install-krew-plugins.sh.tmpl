@@ -1,7 +1,9 @@
 {{- /* Every machine, except that linux-minimal gets it only when its "extras"
        answer lists krew: the plugin manager plus its store are a few hundred
-       MB and need git, which some minimal hosts do not have. */ -}}
+       MB and need git, which some minimal hosts do not have. An appliance has
+       no kubectl, so none there. */ -}}
 {{- $want := true -}}
+{{- if hasKey . "roles" }}{{ if has "appliance" .roles }}{{ $want = false }}{{ end }}{{ end -}}
 {{- if eq .machine "linux-minimal" -}}
 {{-   $want = false -}}
 {{-   if hasKey . "extras" }}{{ if has "krew" (regexSplit "\\s*,\\s*" .extras -1) }}{{ $want = true }}{{ end }}{{ end -}}

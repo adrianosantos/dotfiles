@@ -1,4 +1,6 @@
-{{ if eq .machine "mac-personal" -}}
+{{- /* Not on an appliance: its Brewfile declares no taps. */ -}}
+{{- $appliance := false -}}{{- if hasKey . "roles" }}{{ $appliance = has "appliance" .roles }}{{ end -}}
+{{ if and (eq .machine "mac-personal") (not $appliance) -}}
 {{- $lab := false -}}{{- if hasKey . "roles" }}{{ $lab = has "docker-engine" .roles }}{{ end -}}
 #!/usr/bin/env bash
 # tools-category: Tool manager
