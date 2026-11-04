@@ -26,12 +26,21 @@ done
 unset _p
 {{- end }}
 
-# --- ~/.local/bin, where these dotfiles install tx and vaults, and mise's shims ---
+# --- Go: GOPATH under ~/.local/share instead of Go's default, ~/go ---
+# The home folder keeps nothing loose at its top. Set here, so that every zsh, an
+# agent's `zsh -c` included, and the editors, which take the login shell's
+# environment, share one module cache and one bin; GOBIN follows GOPATH. Go makes
+# the folder on first use. It stays out of the source: a new folder under
+# dot_local/share would make chezmoi change the mode of ~/.local/share itself.
+export GOPATH="$HOME/.local/share/go"
+
+# --- ~/.local/bin (tx and vaults), mise's shims and Go's bin ---
 # .zshrc puts ~/.local/bin first for interactive shells and activates mise; a command
 # run over ssh and an agent's `zsh -lc` read only this file, so without these lines
 # `ssh host tx ...` and `zsh -lc 'kcx ...'` (kcx is a mise tool) are "command not
-# found". Appended here, so in a script they never shadow a system or Homebrew tool.
-for _d in "$HOME/.local/bin" "$HOME/.local/share/mise/shims"; do
+# found". Appended here, so in a script they never shadow a system or Homebrew tool;
+# Go's bin comes last, for what `go install` puts there.
+for _d in "$HOME/.local/bin" "$HOME/.local/share/mise/shims" "$GOPATH/bin"; do
   if [[ -d $_d && :$PATH: != *:$_d:* ]]; then
     export PATH="$PATH:$_d"
   fi

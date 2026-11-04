@@ -81,7 +81,7 @@ so it cannot list something that is not actually installed.
 | `dot_local/bin/executable_cask-update` | `~/.local/bin/cask-update` | mac: updates a pinned cask's app by hand, after a yes: quits it, unpins, upgrades, pins again, reopens it; `--check`, which `up` runs, names the apps behind their cask by the app's own version. `cask-update claude` is how the Claude desktop app is updated, its own updater being blocked |
 | `dot_config/claude-desktop/block-auto-updates.mobileconfig` | `~/.config/claude-desktop/` | mac: the configuration profile that blocks the Claude desktop app's own updater; installed once, by hand |
 | `dot_local/bin/executable_vaults` | `~/.local/bin/vaults` | one status line per Obsidian vault (changes, commits to push or pull, last commit) and `vaults pull` for all of them; POSIX sh, not on linux-minimal |
-| `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG` and `~/.local/bin` for every zsh, coding agents' and ssh commands' included; on a `docker-engine` machine also the Homebrew PATH that ssh commands need |
+| `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG`, `GOPATH` under `~/.local/share/go`, and `~/.local/bin` and Go's bin for every zsh, coding agents' and ssh commands' included; on a `docker-engine` machine also the Homebrew PATH that ssh commands need |
 | `private_dot_ssh/private_config` | `~/.ssh/config` | WSL-only: overlay include + keepalives for stateful-firewall networks |
 | `run_onchange_install-apt-packages.sh.tmpl` | - | Declarative apt list (WSL) |
 | `run_onchange_install-krew-plugins.sh.tmpl` | - | Declarative kubectl/krew plugin list (mac and WSL; on linux-minimal only when asked for via `extras`; bootstraps krew on Linux, skips without git) |
@@ -278,8 +278,12 @@ the check stays quiet there.
 The Claude desktop app hosts the long-lived Claude Code sessions, and Remote
 Control lets the phone reach them. Two of the app's settings, under Claude Code,
 make a Mac a session host; set them once by hand: "Connect new sessions to Remote
-Control" and "Let your phone and claude.ai start sessions here". After the app
-relaunches, each session stays off Remote Control until it gets a message; a
+Control" and "Let your phone and claude.ai start sessions here". The second also
+needs a default folder, set in the same place, for the sessions the phone starts
+(`~/Developer` here); with none, the phone has nothing to start them in. Not every
+installation shows the second setting, even on the same app version; without it,
+the phone cannot start sessions on that Mac. After the app relaunches, each
+session stays off Remote Control until it gets a message; a
 session started from the phone can send one, since a session can list and
 message the Mac's other sessions. The app's own updater is blocked (the profile
 above), so it relaunches only when you update it with `cask-update claude`.
@@ -455,9 +459,8 @@ skip = ["lm-studio"]
 At the next apply, `~/.Brewfile` has `cask "acme/tap/claude-code", trusted:
 true` where `cask "claude-code@latest"` was, with a comment line saying what
 changed (`trusted: true` is how a Brewfile lets Homebrew load a cask from a
-third-party tap). `up` follows the new cask too: after it upgrades, `up`
-restarts a Remote Control server that runs from it, and a replaced cask that
-was pinned is pinned under its new name.
+third-party tap). `up` follows the new cask too: a replaced cask that was
+pinned is pinned under its new name.
 
 - **Names** are the ones the public files use, or the ones TOOLS.md shows,
   without a tap or backend prefix: `claude-code@latest` is the Mac's cask,
