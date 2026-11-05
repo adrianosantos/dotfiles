@@ -52,8 +52,8 @@ never applies this file or CLAUDE.md to a home folder: `.chezmoiignore` lists bo
 
 - Never rename `mac-personal`, `wsl-work` or `linux-minimal` after a machine, and
   never make a template branch on a machine's name. What a machine does is a role
-  (`session-host`, `docker-engine`, `secrets`, `appliance`); what it has of its own goes in the
-  places above.
+  (`session-host`, `docker-engine`, `secrets`, `appliance`); what it has of its
+  own goes in the places above.
 - Never remove a profile, even one you do not use: upstream keeps all three, and a
   fork without one no longer merges upstream cleanly.
 - Before adding a tool, look in [TOOLS.md](TOOLS.md): it lists everything each

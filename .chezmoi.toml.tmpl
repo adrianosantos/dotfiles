@@ -113,7 +113,7 @@ scriptTempDir = {{ (printf "%s/.chezmoi-tmp" .chezmoi.homeDir) | quote }}
     lab_hosts = {{ $labHosts | quote }}
     # What this machine DOES. A TOML array, so templates ask `has "session-host" .roles`.
     # Set only on mac-personal today; other profiles carry an empty list.
-    #   session-host  hosts long-lived Claude Code sessions (launchd job, `up` bounces it)
+    #   session-host  hosts long-lived Claude Code sessions (the desktop app's); stable CLI channel
     #   docker-engine runs a Docker engine other machines reach over ssh
     #   secrets       holds credentials provisioned from 1Password
     #   appliance     runs one service over ssh, no credentials, no agents (wins over the others)
