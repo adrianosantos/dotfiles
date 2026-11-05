@@ -10,9 +10,11 @@
 <dict>
 	<key>Label</key>
 	<string>local.claude-signin</string>
+	<!-- The script itself is the program, run by its own #! line: macOS lists a
+	     background item under its program's name, and "bash" says nothing about
+	     what runs. -->
 	<key>ProgramArguments</key>
 	<array>
-		<string>/bin/bash</string>
 		<string>{{ .chezmoi.homeDir }}/.local/bin/claude-signin</string>
 		<string>check</string>
 	</array>
