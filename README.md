@@ -266,14 +266,18 @@ An appliance exists for its service, and `up` upgrades every formula. `brew
 upgrade` removes the old version of each formula it upgrades, with or without a
 `brew cleanup` after it, so a service still running from that version (Node's
 `process.execPath` points into it) cannot start new processes from it until it
-restarts. Put the service's formulae in `~/.Brewfile.local` with `pin: true`,
-as in `brew "node", pin: true`: `brew bundle` pins them, and `brew upgrade`,
-`brew bundle` and `brew cleanup` then leave them alone. Upgrade one in the
-service's own window: `brew unpin node && brew upgrade node`, restart the
-service, then `brew pin node`. A pin holds only that formula: a library under
-it (`openssl@4`, say) still moves whenever brew installs or upgrades something
-that needs a newer one, `brew bundle install` included, so a service that
-cannot take that runs `up` only in its window too.
+restarts. Pin the service's formulae, once, by hand: `brew pin node`. `brew
+upgrade`, `brew bundle` and `brew cleanup` then leave them alone. List them in
+`~/.Brewfile.local` as well, as `brew "node", pin: true`, so that `brew bundle`
+pins them itself on a new machine. That option reached Homebrew's main branch
+on 2026-11-03 and should come with the first release after 7.0.12; 7.0.12
+itself accepts it without a word and does nothing, so until that release the
+pin by hand is the one that counts. Upgrade one in the service's own window:
+`brew unpin node && brew upgrade node`, restart the service, then `brew pin
+node`. A pin holds only that formula: a library under it (`openssl@4`, say)
+still moves whenever brew installs or upgrades something that needs a newer
+one, `brew bundle install` included, so a service that cannot take that runs
+`up` only in its window too.
 
 Roles rather than machine names, because **a role moves and a name does not**.
 When the desktop is down, session hosting shifts to the laptop by editing one
