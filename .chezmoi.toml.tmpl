@@ -1,7 +1,10 @@
 {{- /* Prompted once per machine on `chezmoi init`; stored in ~/.config/chezmoi/chezmoi.toml.
        Every value uses a *Once helper: an answer already present in the config is reused, so
-       re-running `chezmoi init` (e.g. after this template changes) never loses local settings.
-       Optional values may be left blank — the templates that consume them then emit nothing. */ -}}
+       re-running `chezmoi init` (e.g. after this template changes) never loses an answer.
+       A key added to that file by hand is another matter: init writes only what this
+       template renders, so it keeps such a key only where the end of [data] carries it
+       through, as it does claude_desktop_auto_updates.
+       Optional values may be left blank: the templates that consume them then emit nothing. */ -}}
 {{- $machine := promptChoiceOnce . "machine" "Which machine is this" (list "mac-personal" "wsl-work" "linux-minimal") -}}
 {{- $signingkey := promptStringOnce . "signingkey" "OpenPGP signing key fingerprint (40 hex characters, or a 16-character long key id), blank for none" "" -}}
 {{- /* A wrong answer here is silent and costly: any non-blank value turns on
@@ -134,3 +137,9 @@ scriptTempDir = {{ (printf "%s/.chezmoi-tmp" .chezmoi.homeDir) | quote }}
     #        on a shared host.
     # To add one later: edit this line, then run `up`.
     extras = {{ $extras | quote }}
+{{- if hasKey . "claude_desktop_auto_updates" }}
+    # Added by hand on a Mac whose user lets the Claude desktop app update itself:
+    # run_check-claude-desktop-policy.sh then stays quiet. Carried through here, as
+    # true or false, so that `chezmoi init` keeps it.
+    claude_desktop_auto_updates = {{ eq (toString .claude_desktop_auto_updates) "true" }}
+{{- end }}

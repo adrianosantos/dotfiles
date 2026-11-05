@@ -1,0 +1,46 @@
+{{- $lab := false -}}{{- if hasKey . "roles" }}{{ $lab = has "docker-engine" .roles }}{{ end -}}
+{{- $appliance := false -}}{{- if hasKey . "roles" }}{{ $appliance = has "appliance" .roles }}{{ end -}}
+{{ if and (eq .machine "mac-personal") (or $lab $appliance) -}}
+#!/usr/bin/env bash
+# Take claude-signin off a Mac where the Claude desktop app does not run: a lab node
+# (role docker-engine) or an appliance.
+#
+# A Mac applied before it took one of those roles got claude-signin like any other
+# personal Mac: the script, its launchd job's plist, and the job loaded. With the
+# role set, chezmoi ignores both files (.chezmoiignore) and leaves them where they
+# are, and launchd goes on running the job, and loads it again at every login. This
+# unloads the job and removes the two files, as run_after_unload-concierge.sh and
+# .chezmoiremove do for the concierge. Not through .chezmoiremove: chezmoi skips a
+# target that .chezmoiignore lists, and the script is listed there. The record under
+# ~/.local/state/claude-signin stays.
+#
+# A plain run_after_ script, so it runs at every apply. QUIET BY DESIGN: it prints
+# only when it takes something off, and it never fails the apply.
+set -u
+
+label=local.claude-signin
+target="gui/$(id -u)/$label"
+plist="$HOME/Library/LaunchAgents/$label.plist"
+script="$HOME/.local/bin/claude-signin"
+
+loaded=false
+launchctl print "$target" >/dev/null 2>&1 && loaded=true
+[ "$loaded" = true ] || [ -e "$plist" ] || [ -e "$script" ] || exit 0
+
+did=""
+if [ "$loaded" = true ]; then
+  if launchctl bootout "$target" 2>/dev/null; then
+    did="unloaded its launchd job ($label)"
+  else
+    echo ">>> WARN: could not unload $label; run: launchctl bootout $target"
+  fi
+fi
+for f in "$plist" "$script"; do
+  [ -e "$f" ] || continue
+  rm -f "$f" && did="${did:+$did, }removed ~/${f#"$HOME"/}"
+done
+if [ -n "$did" ]; then
+  echo ">>> claude-signin is off this Mac, where the Claude desktop app does not run: $did"
+fi
+exit 0
+{{ end -}}

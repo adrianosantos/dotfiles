@@ -28,7 +28,10 @@ never applies this file or CLAUDE.md to a home folder: `.chezmoiignore` lists bo
 3. Install as the README's "First-time setup" says: `bootstrap.sh`, or
    `chezmoi init --apply <repo>`. chezmoi asks for the profile: pick the KIND of
    machine, never invent a name. linux-minimal also asks for a bigger filesystem and
-   optional extras; mac-personal asks for roles and lab hosts.
+   optional extras; mac-personal asks for roles and lab hosts. Give the roles
+   there, before anything is applied: a Mac that takes `appliance` or
+   `docker-engine` later keeps what the earlier apply installed (README,
+   "Machine roles").
 4. Put the user's own name and email in `~/.gitconfig.local`. The public
    `~/.gitconfig` carries the maintainer's identity and includes that file last,
    so without it every commit on the machine would carry the maintainer's name.
@@ -39,10 +42,10 @@ never applies this file or CLAUDE.md to a home folder: `.chezmoiignore` lists bo
 | what | where |
 | --- | --- |
 | profile, roles, signing key, lab hosts, extras | local chezmoi data, `~/.config/chezmoi/chezmoi.toml`: answered at `chezmoi init`, changed by editing that file, shown by `chezconf` |
-| a Mac that lets the Claude desktop app update itself | `claude_desktop_auto_updates = true` under `[data]` in that file, added by hand: the check that the app's updater is blocked then stays quiet |
+| a Mac that lets the Claude desktop app update itself | `claude_desktop_auto_updates = true` under `[data]` in that file, added by hand and kept by `chezmoi init`: the check that the app's updater is blocked then stays quiet |
 | anything for work: identity, hosts, aliases, tools | a private overlay cloned to `~/.local/share/dotfiles-overlay`: copy [examples/overlay/](examples/overlay/) into a PRIVATE repository of its own; never a fork, never public |
 | a public package to skip, or to take in another build | `~/.config/dotfiles/packages.toml` (linked from the overlay): `skip = [...]`, `[replace] old = new`; README, "Replacing or skipping a public package" |
-| extra Homebrew packages (Mac) | `~/.Brewfile.local`, added at the end of `~/.Brewfile` |
+| extra Homebrew packages (Mac) | `~/.Brewfile.local`, added at the end of `~/.Brewfile`; on an appliance, the service's own formulae, pinned by hand (`brew pin NAME`) and listed with `pin: true`, which Homebrew honours only from its first release after 7.0.12, so that `up` does not upgrade them under the running service (README, "Machine roles") |
 | extra command-line tools | `~/.config/mise/conf.d/*.toml`; mise cannot change a tool the public config declares from there, so skip or replace that one in `packages.toml` first |
 | git name and email | `~/.gitconfig.local`, which `~/.gitconfig` includes last |
 | shell aliases and environment | `~/.config/zsh/local.d/*.zsh`; on linux-minimal `~/.config/bash/local.bash` or `local.d/*.bash` |
@@ -75,7 +78,7 @@ never applies this file or CLAUDE.md to a home folder: `.chezmoiignore` lists bo
 | `chezmoi apply [TARGET...]` | Writes the managed files, and runs the `run_` scripts. | After `chezmoi diff`, to apply a change. |
 | `chezmoi edit FILE` | Opens the source of a managed file. The only way to change a templated file (`*.tmpl` in the source). | To change a managed file, in the core only (see Scope). |
 | `chezmoi re-add FILE` | Copies a change made in a live, non-templated file back into the source. chezmoi cannot un-template, so never for a templated file. | Rarely; prefer `chezmoi edit`. |
-| `chezmoi init` | Regenerates `~/.config/chezmoi/chezmoi.toml` from the config template. Answers already there are kept; only new questions are asked. | When `up` reports that the config template changed. Run `chezconf` first. |
+| `chezmoi init` | Regenerates `~/.config/chezmoi/chezmoi.toml` from the config template. Answers already there are kept, and so is `claude_desktop_auto_updates`; only new questions are asked. Anything else added to that file by hand is dropped. | When `up` reports that the config template changed. Run `chezconf` first. |
 | `chezconf` (zsh) | Prints this machine's chezmoi data: profile, roles, lab hosts, signing key, CA URL, bigdisk, extras. Read-only. | Before `chezmoi init`, or to see how a machine is set up. |
 | `tools` | Counts the tools each category declares, read from the `# --- Category ---` headers of `~/.Brewfile` and the mise config. Read-only. | To see the shape of a machine's toolchain; TOOLS.md has the long form. |
 | `cask-update` (Mac) | `cask-update --check` names the pinned casks whose app is behind its cask (what `up` runs). `cask-update [-y] NAME...` quits the app if it runs, unpins, upgrades, pins again and reopens it; it refuses to update the Claude desktop app from a shell inside that app. | `--check` any time. An update only when the user asks: it quits the app. |

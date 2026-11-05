@@ -100,6 +100,7 @@ so it cannot list something that is not actually installed.
 | `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac); skipped where the machine's data sets `claude_desktop_auto_updates = true` |
 | `run_after_unload-concierge.sh.tmpl` | - | mac: unloads the concierge's launchd job where it still runs, once `.chezmoiremove` has taken its plist, script and folder (the concierge was dropped on 2026-11-01) |
 | `run_after_load-claude-signin.sh.tmpl` | - | mac, where the Claude desktop app runs: loads the `claude-signin` job, and again when its plist changes; silent when it is loaded and current |
+| `run_after_unload-claude-signin.sh.tmpl` | - | mac, on a lab node or an appliance, where the Claude desktop app does not run: unloads the `claude-signin` job and removes its script and plist, left there by an apply from before the role; silent when there are none |
 | `run_pin-self-updating-casks.sh.tmpl` | - | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
 | `gen-tools.py` | `TOOLS.md` | Regenerates the tool inventory; `--check` fails if the file is stale |
 | `.chezmoi.toml.tmpl` | chezmoi config | Prompts once on init: the machine, and for linux-minimal a bigger filesystem and optional extras |
@@ -254,6 +255,30 @@ machine is FOR, not by what happens to be installed on it:
 | `secrets` | the machine holds credentials provisioned from a password manager | the templates that write those files |
 | `appliance` | the machine only runs a service (a VM host, a box for one assistant), is reached over ssh, and holds no credentials and no agent sessions | a short allow-list Brewfile instead of the desktop one (shell, completions and a core CLI; no taps, casks, cloud CLIs, gh, 1Password, coding agents or Docker), no tools from the mise config, the PATH line in `~/.zshenv` that `docker-engine` gets, and none of the Claude desktop, cask-pin, tap-trust or krew scripts. It wins over any role it is combined with. A machine's own extras go in `~/.Brewfile.local` and `~/.config/mise/conf.d/` |
 
+Set `appliance` or `docker-engine` at the first `chezmoi init`, before anything
+is applied. A Mac that takes either later keeps what its earlier setup
+installed: chezmoi leaves a file it stops managing, and `brew bundle` never
+uninstalls. `claude-signin` is the exception, its launchd job being the one
+thing that would go on running: `run_after_unload-claude-signin.sh` unloads the
+job and removes the script and its plist.
+
+An appliance exists for its service, and `up` upgrades every formula. `brew
+upgrade` removes the old version of each formula it upgrades, with or without a
+`brew cleanup` after it, so a service still running from that version (Node's
+`process.execPath` points into it) cannot start new processes from it until it
+restarts. Pin the service's formulae, once, by hand: `brew pin node`. `brew
+upgrade`, `brew bundle` and `brew cleanup` then leave them alone. List them in
+`~/.Brewfile.local` as well, as `brew "node", pin: true`, so that `brew bundle`
+pins them itself on a new machine. That option reached Homebrew's main branch
+on 2026-11-03 and should come with the first release after 7.0.12; 7.0.12
+itself accepts it without a word and does nothing, so until that release the
+pin by hand is the one that counts. Upgrade one in the service's own window:
+`brew unpin node && brew upgrade node`, restart the service, then `brew pin
+node`. A pin holds only that formula: a library under it (`openssl@4`, say)
+still moves whenever brew installs or upgrades something that needs a newer
+one, `brew bundle install` included, so a service that cannot take that runs
+`up` only in its window too.
+
 Roles rather than machine names, because **a role moves and a name does not**.
 When the desktop is down, session hosting shifts to the laptop by editing one
 line in a config; nothing in this repo changes.
@@ -264,7 +289,10 @@ otherwise produce a machine that silently never does the thing.
 `chezconf` prints what the current machine has, which is also what `up` shows
 you if chezmoi reports that the config template changed. Existing answers are
 never lost: every prompt reuses a value already present and asks only about
-genuinely new fields. To CHANGE one, edit the config file directly.
+genuinely new fields. To CHANGE one, edit the config file directly. A line
+added to that file by hand is another matter: `chezmoi init` writes only what
+the template renders, which carries `claude_desktop_auto_updates` (below) and
+nothing else.
 
 Lab machines reachable over ssh are configured next to this, as `lab_hosts`,
 in `alias:hostname` pairs. The hostnames stay in your own config rather than in
@@ -275,7 +303,8 @@ These dotfiles block the Claude desktop app's own updater and check on every
 apply that the profile doing so is in force (the app relaunches to update, and
 that drops the sessions it hosts). A Mac whose user lets the app update itself
 sets `claude_desktop_auto_updates = true` under `[data]` in the same file, and
-the check stays quiet there.
+the check stays quiet there. `chezmoi init` keeps that line when it writes the
+file again.
 
 ### Hosting sessions (session-host)
 
