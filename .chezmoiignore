@@ -74,8 +74,12 @@ ensure-ssh-include.sh
 {{- /* Nor on an appliance, which has no desktop app. */}}
 {{ if or (ne .machine "mac-personal") (has "docker-engine" $roles) (has "appliance" $roles) -}}
 # The Claude desktop app runs only on the personal Macs that are not lab nodes:
-# the profile that blocks its own updater has nothing to do anywhere else.
+# the profile that blocks its own updater, and the watch on its sign-in, have nothing
+# to do anywhere else. ~/Library stays out of chezmoi's hands entirely there, so its
+# mode (0700 on a Mac) is never touched.
 .config/claude-desktop
+.local/bin/claude-signin
+Library
 {{- end }}
 {{- /* An appliance declares no casks, so it does not get cask-update either. */}}
 {{ if or (ne .machine "mac-personal") (has "appliance" $roles) -}}

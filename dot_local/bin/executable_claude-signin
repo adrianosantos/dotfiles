@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+# claude-signin: how old the Claude desktop app's sign-in is on this Mac, and a
+# warning hours before it runs out.
+#
+# The app mints the tokens of the Claude Code sessions it hosts from its own claude.ai
+# sign-in. Once that sign-in is too old the server refuses to renew it
+# (session_stale_relogin), each session fails at its next token renewal with a 401,
+# on the phone too, and only signing in again in the app, on this Mac, brings them
+# back. The limit is not published; one sign-in measured here lasted 30 days less 5
+# minutes (2026-10-05 to 2026-11-04). Signing in again earlier starts a new period.
+#
+#   claude-signin                 the sign-in's age and when it is expected to lapse
+#   claude-signin check           what the launchd job local.claude-signin runs every
+#                                 15 minutes: records a new sign-in, and posts a
+#                                 notification 24 h, 4 h and 1 h before the expected
+#                                 lapse, and as soon as the app logs the refusal.
+#                                 Silent otherwise.
+#   claude-signin reminders on    also add two reminders to Reminders, 24 h and 4 h
+#                                 before each expected lapse, so the phone gets them.
+#                                 Run it at the Mac: macOS asks once to let it control
+#                                 Reminders. `reminders off` stops adding them.
+#
+# It reads the sign-in from the app's own log, ~/Library/Logs/Claude/main*.log, an
+# internal format an update may change: when it finds no sign-in it says so instead
+# of guessing. CLAUDE_SIGNIN_DAYS (default 30) is the assumed lifetime.
+set -u
+
+days=${CLAUDE_SIGNIN_DAYS:-30}
+logdir=${CLAUDE_SIGNIN_LOGDIR:-$HOME/Library/Logs/Claude}
+state=${XDG_STATE_HOME:-$HOME/.local/state}/claude-signin
+now=${CLAUDE_SIGNIN_NOW:-$(date +%s)}
+host=$(scutil --get LocalHostName 2>/dev/null || hostname -s)
+# A sign-in, and a refusal to renew one. The app logs "clearing latched
+# session_stale_relogin failures" when a new sign-in ends a refusal, so that line is
+# left out of the refusals.
+signin_re='\[nav\] Dropped [0-9]+ sign-in history entries'
+refused_re='session_stale_relogin'
+refused_not='clearing latched'
+
+to_epoch() { date -j -f '%Y-%m-%d %H:%M:%S' "$1" +%s 2>/dev/null; }
+when() { date -r "$1" '+%a %b %e %H:%M' | tr -s ' '; }
+span() { # seconds -> "3 d 4 h", "4 h 10 min" or "10 min"
+  local s=$1
+  [ "$s" -lt 0 ] && s=0
+  if [ "$s" -ge 86400 ]; then echo "$((s / 86400)) d $((s % 86400 / 3600)) h"
+  elif [ "$s" -ge 3600 ]; then echo "$((s / 3600)) h $((s % 3600 / 60)) min"
+  else echo "$((s / 60)) min"; fi
+}
+
+# The newest log line that matches $1 and not $2, in epoch seconds; 0 when there is
+# none. The app rotates main.log into main1.log to main4.log, about four weeks in all.
+newest() {
+  local f line e best=0
+  for f in "$logdir"/main4.log "$logdir"/main3.log "$logdir"/main2.log "$logdir"/main1.log "$logdir"/main.log; do
+    [ -r "$f" ] || continue
+    if [ -n "${2:-}" ]; then
+      line=$(grep -E "$1" "$f" 2>/dev/null | grep -v -E "$2" | tail -n 1)
+    else
+      line=$(grep -E "$1" "$f" 2>/dev/null | tail -n 1)
+    fi
+    [ -n "$line" ] || continue
+    e=$(to_epoch "${line:0:19}") || continue
+    [ "$e" -gt "$best" ] && best=$e
+  done
+  echo "$best"
+}
+
+# The sign-in this script recorded, or a newer one from the log.
+signin() {
+  local known logged
+  known=$(cat "$state/signin" 2>/dev/null || echo 0)
+  logged=$(newest "$signin_re")
+  [ "$logged" -gt "$known" ] && known=$logged
+  echo "$known"
+}
+
+notify() { # title message
+  if [ -n "${CLAUDE_SIGNIN_NOTIFY:-}" ]; then "$CLAUDE_SIGNIN_NOTIFY" "$1" "$2"; return 0; fi
+  osascript - "$1" "$2" >/dev/null 2>&1 <<'EOF' || true
+on run argv
+  display notification (item 2 of argv) with title (item 1 of argv) sound name "Glass"
+end run
+EOF
+}
+
+# Two reminders, 24 h and 4 h before the lapse expected from sign-in $1; this Mac's
+# earlier ones are marked done, not deleted. AppleScript gets offsets in seconds from
+# now, so no date string has to survive the system's locale.
+reminders_set() {
+  local deadline=$(( $1 + days * 86400 )) real
+  real=$(date +%s)
+  osascript - "$host" "$(when "$deadline")" $((deadline - 86400 - real)) $((deadline - 14400 - real)) >/dev/null 2>&1 <<'EOF'
+on run argv
+  set h to item 1 of argv
+  set tag to "Claude sign-in on " & h
+  tell application "Reminders"
+    repeat with r in (every reminder whose name starts with tag and completed is false)
+      set completed of r to true
+    end repeat
+    repeat with o in {(item 3 of argv) as integer, (item 4 of argv) as integer}
+      if o > 0 then
+        set d to (current date) + o
+        make new reminder with properties {name:tag & " lapses around " & (item 2 of argv), body:"Sign in again in the Claude app on " & h & " before then: the sessions it hosts stop when it lapses.", due date:d, remind me date:d}
+      end if
+    end repeat
+  end tell
+end run
+EOF
+}
+
+check() {
+  mkdir -p "$state" || return 0
+  local known recorded deadline left refused t p
+  recorded=$(cat "$state/signin" 2>/dev/null || echo 0)
+  known=$(signin)
+  if [ "$known" -gt "$recorded" ]; then
+    echo "$known" > "$state/signin"
+    : > "$state/warned"
+    echo "$(date -r "$known" '+%Y-%m-%d %H:%M') signed in" >> "$state/history"
+    [ -e "$state/reminders" ] && reminders_set "$known"
+  fi
+  [ "$known" -gt 0 ] || return 0
+  refused=$(newest "$refused_re" "$refused_not")
+  if [ "$refused" -gt "$known" ]; then
+    grep -qx "refused:$refused" "$state/warned" 2>/dev/null && return 0
+    notify "Claude sign-in lapsed on $host" "The app can no longer renew its sign-in, so the sessions it hosts stop. Sign in again in the Claude app on this Mac."
+    echo "refused:$refused" >> "$state/warned"
+    echo "$(date -r "$refused" '+%Y-%m-%d %H:%M') refused, $(span $((refused - known))) after the sign-in" >> "$state/history"
+    return 0
+  fi
+  deadline=$((known + days * 86400))
+  left=$((deadline - now))
+  for t in 86400 14400 3600; do
+    [ "$left" -le "$t" ] || continue
+    grep -qx "$deadline:$t" "$state/warned" 2>/dev/null && continue
+    notify "Claude sign-in on $host lapses in $(span "$left")" "Expected around $(when "$deadline"). Sign in again in the Claude app before then: the sessions it hosts stop when it lapses."
+    # Every threshold already passed counts as warned, so a late run posts one.
+    for p in 86400 14400 3600; do [ "$left" -le "$p" ] && echo "$deadline:$p" >> "$state/warned"; done
+    break
+  done
+}
+
+status() {
+  local known refused deadline
+  known=$(signin)
+  if [ "$known" -le 0 ]; then
+    echo "Claude sign-in: none found in the app's log, which reaches back about four weeks"
+    return 0
+  fi
+  refused=$(newest "$refused_re" "$refused_not")
+  if [ "$refused" -gt "$known" ]; then
+    echo "Claude sign-in: LAPSED at $(when "$refused"); sign in again in the Claude app on this Mac"
+    return 0
+  fi
+  deadline=$((known + days * 86400))
+  echo "Claude sign-in: $(span $((now - known))) old (since $(when "$known")); expected to lapse around $(when "$deadline"), in $(span $((deadline - now)))"
+}
+
+reminders_on() {
+  local known
+  mkdir -p "$state" || return 1
+  known=$(signin)
+  if [ "$known" -le 0 ]; then
+    echo "claude-signin: no sign-in found in the app's log, so no reminders yet" >&2
+    return 1
+  fi
+  if reminders_set "$known"; then
+    touch "$state/reminders"
+    echo "Reminders on: two for the lapse expected around $(when $((known + days * 86400)))."
+  else
+    echo "claude-signin: Reminders refused; allow it in System Settings > Privacy & Security > Automation, then run this again" >&2
+    return 1
+  fi
+}
+
+case "${1:-}" in
+  "") status ;;
+  check) check ;;
+  reminders)
+    case "${2:-}" in
+      on) reminders_on ;;
+      off) rm -f "$state/reminders"; echo "Reminders off: the ones already added stay." ;;
+      *) echo "usage: claude-signin reminders on|off" >&2; exit 2 ;;
+    esac ;;
+  -h|--help|help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' ;;
+  *) echo "claude-signin: unknown command '$1' (try claude-signin help)" >&2; exit 2 ;;
+esac

@@ -1,0 +1,32 @@
+{{- $lab := false -}}{{- if hasKey . "roles" }}{{ $lab = has "docker-engine" .roles }}{{ end -}}
+{{- $appliance := false -}}{{- if hasKey . "roles" }}{{ $appliance = has "appliance" .roles }}{{ end -}}
+{{ if and (eq .machine "mac-personal") (not $lab) (not $appliance) -}}
+#!/usr/bin/env bash
+# Load the launchd job local.claude-signin, which warns before the Claude desktop
+# app's sign-in runs out, and load it again when its plist changes.
+#
+# A plain run_ script, not run_onchange_: launchd can refuse the load, over ssh with
+# nobody logged in at the Mac, and an onchange script would then record itself as done
+# and never try again. This one checks at every apply, which costs one `launchctl
+# print`, and stays silent when the job is loaded and current.
+set -u
+label=local.claude-signin
+plist="$HOME/Library/LaunchAgents/$label.plist"
+target="gui/$(id -u)"
+stamp="${XDG_STATE_HOME:-$HOME/.local/state}/claude-signin/loaded"
+[ -f "$plist" ] || exit 0
+want=$(shasum -a 256 "$plist" | cut -d' ' -f1)
+if launchctl print "$target/$label" >/dev/null 2>&1 && [ "$(cat "$stamp" 2>/dev/null)" = "$want" ]; then
+  exit 0
+fi
+launchctl bootout "$target/$label" >/dev/null 2>&1 || true
+for _ in 1 2 3; do
+  if launchctl bootstrap "$target" "$plist" 2>/dev/null; then
+    mkdir -p "${stamp%/*}" && echo "$want" > "$stamp"
+    echo ">>> claude-signin: its launchd job ($label) is loaded and checks every 15 minutes"
+    exit 0
+  fi
+  sleep 1
+done
+echo ">>> WARN: could not load $label; at the Mac, run: launchctl bootstrap $target $plist"
+{{ end -}}

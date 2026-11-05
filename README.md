@@ -80,6 +80,8 @@ so it cannot list something that is not actually installed.
 | `dot_local/bin/executable_tx` | `~/.local/bin/tx` | curl-only S3 file-transfer client (pairs with [s3tx](https://github.com/junior/s3tx)) |
 | `dot_local/bin/executable_cask-update` | `~/.local/bin/cask-update` | mac: updates a pinned cask's app by hand, after a yes: quits it, unpins, upgrades, pins again, reopens it; `--check`, which `up` runs, names the apps behind their cask by the app's own version. `cask-update claude` is how the Claude desktop app is updated, its own updater being blocked |
 | `dot_config/claude-desktop/block-auto-updates.mobileconfig` | `~/.config/claude-desktop/` | mac: the configuration profile that blocks the Claude desktop app's own updater; installed once, by hand |
+| `dot_local/bin/executable_claude-signin` | `~/.local/bin/claude-signin` | mac, where the Claude desktop app runs: the age of the app's sign-in and when it is expected to lapse (`up` prints it); `check`, which the job below runs, warns 24 h, 4 h and 1 h before and when the app logs the refusal; `reminders on` adds the warnings to Reminders, for the phone |
+| `private_Library/LaunchAgents/local.claude-signin.plist.tmpl` | `~/Library/LaunchAgents/local.claude-signin.plist` | mac, where the Claude desktop app runs: the launchd job that runs `claude-signin check` every 15 minutes |
 | `dot_local/bin/executable_vaults` | `~/.local/bin/vaults` | one status line per Obsidian vault (changes, commits to push or pull, last commit) and `vaults pull` for all of them; POSIX sh, not on linux-minimal |
 | `dot_zshenv.tmpl` | `~/.zshenv` | mac: `KUBECONFIG`, `GOPATH` under `~/.local/share/go`, and `~/.local/bin` and Go's bin for every zsh, coding agents' and ssh commands' included; on a `docker-engine` or `appliance` machine also the Homebrew PATH that ssh commands need |
 | `private_dot_ssh/private_config` | `~/.ssh/config` | WSL-only: overlay include + keepalives for stateful-firewall networks |
@@ -97,6 +99,7 @@ so it cannot list something that is not actually installed.
 | `run_setup-docker-cli.sh.tmpl` | - | docker CLI against rootless Podman + self-updating `dhi`/`scout` plugins (WSL) |
 | `run_check-claude-desktop-policy.sh.tmpl` | - | Checks that the profile above is in force and says how to install it when it is not (mac); skipped where the machine's data sets `claude_desktop_auto_updates = true` |
 | `run_after_unload-concierge.sh.tmpl` | - | mac: unloads the concierge's launchd job where it still runs, once `.chezmoiremove` has taken its plist, script and folder (the concierge was dropped on 2026-11-01) |
+| `run_after_load-claude-signin.sh.tmpl` | - | mac, where the Claude desktop app runs: loads the `claude-signin` job, and again when its plist changes; silent when it is loaded and current |
 | `run_pin-self-updating-casks.sh.tmpl` | - | Pins casks that update themselves, so brew never fights their updater (mac); `up` names any app that falls behind, and `cask-update` updates it |
 | `gen-tools.py` | `TOOLS.md` | Regenerates the tool inventory; `--check` fails if the file is stale |
 | `.chezmoi.toml.tmpl` | chezmoi config | Prompts once on init: the machine, and for linux-minimal a bigger filesystem and optional extras |
@@ -300,6 +303,15 @@ Until 2026-11-01 the role also ran a concierge: a command-line Claude Code under
 launchd that kept Remote Control reachable when the app was not. The app's own
 remote start made it redundant. An apply removes its launchd job, its script and
 its folder from a Mac that still has them, and unloads a job still running.
+
+The app's own sign-in lapses after about 30 days (one measured: 30 days less 5
+minutes), and it takes every session the app hosts with it: each fails at its next
+token renewal, with a 401 on the phone too, until someone signs in again in the app
+at that Mac. The app says nothing before; `claude-signin` does. Its launchd job posts
+a notification 24 h, 4 h and 1 h before the expected lapse, and as soon as the app
+logs the refusal, and `claude-signin reminders on`, run once at the Mac, adds the
+warnings to Reminders so that they reach the phone. Signing in again early starts a
+new period.
 
 ## Kubeconfigs (kcx)
 
