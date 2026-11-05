@@ -449,6 +449,11 @@ up() {
   if command -v cask-update &>/dev/null; then
     cask-update --check || true
   fi
+  # The Claude desktop app's sign-in lapses after about 30 days, and every session it
+  # hosts stops with it: its age, and when it is expected to lapse (claude-signin).
+  if command -v claude-signin &>/dev/null; then
+    claude-signin || true
+  fi
   # `mise upgrade` asks every tool for its latest version, but http:-backend tools
   # pin an exact URL and expose no version feed — they only answer with
   # "Error getting latest version ... no version found". Skip them; they are

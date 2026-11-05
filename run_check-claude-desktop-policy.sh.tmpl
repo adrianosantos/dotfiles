@@ -1,6 +1,8 @@
 {{- $lab := false -}}{{- if hasKey . "roles" }}{{ $lab = has "docker-engine" .roles }}{{ end -}}
 {{- $auto := false -}}{{- if hasKey . "claude_desktop_auto_updates" }}{{ $auto = eq (toString .claude_desktop_auto_updates) "true" }}{{ end -}}
-{{ if and (eq .machine "mac-personal") (not $lab) (not $auto) -}}
+{{- /* An appliance has no desktop app either, so it is skipped like the lab node. */ -}}
+{{- $appliance := false -}}{{- if hasKey . "roles" }}{{ $appliance = has "appliance" .roles }}{{ end -}}
+{{ if and (eq .machine "mac-personal") (not $lab) (not $appliance) (not $auto) -}}
 #!/usr/bin/env bash
 # Check that the Claude desktop app's own updater is blocked.
 #

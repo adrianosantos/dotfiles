@@ -8,6 +8,9 @@
 {{- if not (hasKey . "packages_raw") -}}
 {{-   includeTemplate "packages-filter" (dict "file" "dot_config/mise/config.toml.tmpl" "format" "mise" "data" .) | trimSuffix "\n" -}}
 {{- else -}}
+{{- /* An appliance (role appliance, mac-personal) gets no tools from here, only the
+       settings: what one appliance needs goes in its ~/.config/mise/conf.d/. */ -}}
+{{- $appliance := false -}}{{- if hasKey . "roles" }}{{ $appliance = has "appliance" .roles }}{{ end -}}
 # mise global config — managed by chezmoi
 # Shared: language runtimes with per-project version sensitivity.
 # Per-machine: WSL uses mise for the full toolchain (no Homebrew there);
@@ -31,7 +34,7 @@ minimum_release_age_excludes = ["github:junior/kcx"]
 # group TOOLS.md, so a new tool belongs under one of them. The vocabulary is
 # shared with the Brewfile so both machines document alike.
 
-{{ if ne .machine "linux-minimal" -}}
+{{ if and (ne .machine "linux-minimal") (not $appliance) -}}
 # --- Languages + runtimes ---
 node      = "lts"
 python    = "latest"
@@ -135,7 +138,7 @@ zoxide    = "latest"
 # merges automatically.
 {{- end }}
 
-{{ if eq .machine "mac-personal" -}}
+{{ if and (eq .machine "mac-personal") (not $appliance) -}}
 # === mac-personal: opentofu + npm globals (languages above; rest via Homebrew) ===
 
 # --- Languages + runtimes ---

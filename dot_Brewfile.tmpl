@@ -21,6 +21,45 @@
        own prebuilt binaries through mise instead; see decision 0006 in the vault.
        Keyed on the architecture, never on a machine name, like the casks below. */ -}}
 {{- $intel := eq .chezmoi.arch "amd64" -}}
+{{- /* An APPLIANCE gets its own short list and nothing below it. It wins over any
+       role it is combined with, as the lab node wins over session-host. */ -}}
+{{- $appliance := false -}}{{- if hasKey . "roles" }}{{ $appliance = has "appliance" .roles }}{{ end -}}
+{{- if $appliance -}}
+# Brewfile (mac-personal, role appliance) - apply with `brew bundle --global`
+#
+# An APPLIANCE runs one service (a VM host, a box for one assistant), is reached
+# over ssh, and holds no credentials and no agent sessions. Its packages are an
+# ALLOW-LIST, the opposite of the lab node's deny-list: nothing added to the desktop
+# list reaches it, so an appliance changes only when someone changes this list. No
+# taps, no GUI casks, no cloud CLIs, no gh (no credentials to use it with), no
+# 1Password, no coding agents, no Docker. The one tool a single appliance needs goes
+# in its own ~/.Brewfile.local.
+
+# --- Formulae: shell + completions ---
+brew "powerlevel10k"
+brew "zsh"
+brew "zsh-autosuggestions"
+brew "zsh-completions"
+brew "zsh-history-substring-search"
+brew "zsh-syntax-highlighting"
+
+# --- Formulae: dev utilities ---
+brew "bat"         # ~/.zshrc's cat alias and MANPAGER
+brew "chezmoi"
+brew "eza"         # ~/.zshrc's ls aliases
+brew "fd"
+brew "fzf"
+brew "git"
+brew "git-delta"   # ~/.gitconfig's pager
+brew "jq"
+brew "ripgrep"
+brew "zoxide"
+
+# --- Formulae: system / misc ---
+brew "htop"
+{{ if not $intel }}brew "mise"{{ end }}   # from its own release binary on Intel: run_install-mise-intel-mac.sh
+brew "tmux"
+{{- else -}}
 # Brewfile (mac-personal) — apply with `brew bundle --global`
 # Languages (node, python, terraform, opentofu) are managed by mise.
 #
@@ -267,6 +306,7 @@ cask "lm-studio"
 
 # --- Casks: fonts ---
 cask "font-meslo-lg-nerd-font"
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
