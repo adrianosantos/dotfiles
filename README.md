@@ -272,12 +272,21 @@ upgrade`, `brew bundle` and `brew cleanup` then leave them alone. List them in
 pins them itself on a new machine. That option reached Homebrew's main branch
 on 2026-11-03 and should come with the first release after 7.0.12; 7.0.12
 itself accepts it without a word and does nothing, so until that release the
-pin by hand is the one that counts. Upgrade one in the service's own window:
-`brew unpin node && brew upgrade node`, restart the service, then `brew pin
-node`. A pin holds only that formula: a library under it (`openssl@4`, say)
-still moves whenever brew installs or upgrades something that needs a newer
-one, `brew bundle install` included, so a service that cannot take that runs
-`up` only in its window too.
+pin by hand is the one that counts.
+
+A pin holds only that formula, not the libraries under it (`openssl@4`,
+`simdjson`): those still move with every `up`, and whenever brew installs
+something that needs a newer one, `brew bundle install` included. A library
+that changes its major version leaves a pinned formula built against the old
+one unable to start at all, and brew leaves a pinned formula it finds broken
+as it is (`Not reinstalling ... broken and outdated, but pinned`), so
+restarting the service does not bring it back. So on an appliance whose
+service runs from a formula, `up` belongs in the service's own window, and the
+window starts with the unpin: `brew unpin node`, `up`, restart the service,
+`brew pin node`. A macOS privacy grant made to the formula's binary (Full Disk
+Access, say) stays with the old build: Homebrew's builds are ad-hoc signed, so
+macOS takes each one for a new program. Grant it to the new build before the
+restart.
 
 Roles rather than machine names, because **a role moves and a name does not**.
 When the desktop is down, session hosting shifts to the laptop by editing one
