@@ -282,10 +282,13 @@ one unable to start at all, and brew leaves a pinned formula it finds broken
 as it is (`Not reinstalling ... broken and outdated, but pinned`), so
 restarting the service does not bring it back. So on an appliance whose
 service runs from a formula, `up` belongs in the service's own window, and the
-window starts with the unpin: `brew unpin node`, `up`, restart the service,
-`brew pin node`. A macOS privacy grant made to the formula's binary (Full Disk
-Access, say) stays with the old build: Homebrew's builds are ad-hoc signed, so
-macOS takes each one for a new program. Grant it to the new build before the
+window starts with the unpin and the formula's own upgrade: `brew unpin node
+&& brew upgrade node`, then `up`, a restart of the service, and `brew pin
+node`. The upgrade comes before `up` because `up` runs `brew bundle` before
+`brew upgrade`, and a Homebrew that honours `pin: true` pins the entry again
+there. A macOS privacy grant made to the formula's binary (Full Disk Access,
+say) stays with the old build: Homebrew's builds are ad-hoc signed, so macOS
+takes each one for a new program. Grant it to the new build before the
 restart.
 
 Roles rather than machine names, because **a role moves and a name does not**.
