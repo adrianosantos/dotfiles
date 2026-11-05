@@ -31,7 +31,7 @@
        it so a machine that already answered is never asked a second time. */ -}}
 {{-   $roles = join "," .roles -}}
 {{- else if eq $machine "mac-personal" -}}
-{{-   $roles = promptStringOnce . "roles_input" "Roles for this machine, comma-separated: session-host, docker-engine, secrets. Blank for none, which is the common case. See the Machine roles table in README.md for which to pick" "" -}}
+{{-   $roles = promptStringOnce . "roles_input" "Roles for this machine, comma-separated: session-host, docker-engine, secrets, appliance. Blank for none, which is the common case. See the Machine roles table in README.md for which to pick" "" -}}
 {{- end -}}
 {{- /* Lab machines this one reaches over ssh, as alias=hostname pairs. Kept as a prompt
        because this repo is PUBLIC and home addresses do not belong in it, and because the
@@ -48,7 +48,7 @@
 {{-     end -}}
 {{-   end -}}
 {{- end -}}
-{{- $knownRoles := list "session-host" "docker-engine" "secrets" -}}
+{{- $knownRoles := list "session-host" "docker-engine" "secrets" "appliance" -}}
 {{- $roleList := list -}}
 {{- range (splitList "," $roles) -}}
 {{-   $r := trim . -}}
@@ -116,6 +116,7 @@ scriptTempDir = {{ (printf "%s/.chezmoi-tmp" .chezmoi.homeDir) | quote }}
     #   session-host  hosts long-lived Claude Code sessions (launchd job, `up` bounces it)
     #   docker-engine runs a Docker engine other machines reach over ssh
     #   secrets       holds credentials provisioned from 1Password
+    #   appliance     runs one service over ssh, no credentials, no agents (wins over the others)
     # roles_input is what you typed; `roles` is the parsed list that templates read.
     # Two keys on purpose: see the comment at the top of this template.
     roles_input = {{ $roles | quote }}

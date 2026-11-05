@@ -71,17 +71,19 @@ examples
 # added: for lab hosts, or for a private overlay's hosts on a work Mac.
 ensure-ssh-include.sh
 {{- end }}
-{{ if or (ne .machine "mac-personal") (has "docker-engine" $roles) -}}
+{{- /* Nor on an appliance, which has no desktop app. */}}
+{{ if or (ne .machine "mac-personal") (has "docker-engine" $roles) (has "appliance" $roles) -}}
 # The Claude desktop app runs only on the personal Macs that are not lab nodes:
 # the profile that blocks its own updater has nothing to do anywhere else.
 .config/claude-desktop
 {{- end }}
-{{ if ne .machine "mac-personal" -}}
+{{- /* An appliance declares no casks, so it does not get cask-update either. */}}
+{{ if or (ne .machine "mac-personal") (has "appliance" $roles) -}}
 # Homebrew casks exist only on the personal Macs, so cask-update has nothing to do
 # anywhere else.
 .local/bin/cask-update
 {{- end }}
-{{ $owner := false }}{{ if and (eq .machine "mac-personal") (has "secrets" $roles) (not (has "docker-engine" $roles)) }}{{ if hasKey . "signingkey" }}{{ if .signingkey }}{{ $logbook := stat (joinPath .chezmoi.homeDir "vaults" "logbook") }}{{ if $logbook }}{{ if $logbook.isDir }}{{ $owner = true }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
+{{ $owner := false }}{{ if and (eq .machine "mac-personal") (has "secrets" $roles) (not (has "docker-engine" $roles)) (not (has "appliance" $roles)) }}{{ if hasKey . "signingkey" }}{{ if .signingkey }}{{ $logbook := stat (joinPath .chezmoi.homeDir "vaults" "logbook") }}{{ if $logbook }}{{ if $logbook.isDir }}{{ $owner = true }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
 {{ if not $owner -}}
 # ~/Developer's layout (its AGENTS.md and CLAUDE.md, the GitHub/ folders and tmp/) is
 # the owner's own. It renders only on a personal Mac that holds their credentials

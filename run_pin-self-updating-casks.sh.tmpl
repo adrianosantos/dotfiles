@@ -1,4 +1,6 @@
-{{ if eq .machine "mac-personal" -}}
+{{- /* Not on an appliance: its Brewfile declares no casks. */ -}}
+{{- $appliance := false -}}{{- if hasKey . "roles" }}{{ $appliance = has "appliance" .roles }}{{ end -}}
+{{ if and (eq .machine "mac-personal") (not $appliance) -}}
 #!/usr/bin/env bash
 # Pin casks that keep THEMSELVES current.
 #
