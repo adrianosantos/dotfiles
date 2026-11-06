@@ -272,12 +272,24 @@ upgrade`, `brew bundle` and `brew cleanup` then leave them alone. List them in
 pins them itself on a new machine. That option reached Homebrew's main branch
 on 2026-11-03 and should come with the first release after 7.0.12; 7.0.12
 itself accepts it without a word and does nothing, so until that release the
-pin by hand is the one that counts. Upgrade one in the service's own window:
-`brew unpin node && brew upgrade node`, restart the service, then `brew pin
-node`. A pin holds only that formula: a library under it (`openssl@4`, say)
-still moves whenever brew installs or upgrades something that needs a newer
-one, `brew bundle install` included, so a service that cannot take that runs
-`up` only in its window too.
+pin by hand is the one that counts.
+
+A pin holds only that formula, not the libraries under it (`openssl@4`,
+`simdjson`): those still move with every `up`, and whenever brew installs
+something that needs a newer one, `brew bundle install` included. A library
+that changes its major version leaves a pinned formula built against the old
+one unable to start at all, and brew leaves a pinned formula it finds broken
+as it is (`Not reinstalling ... broken and outdated, but pinned`), so
+restarting the service does not bring it back. So on an appliance whose
+service runs from a formula, `up` belongs in the service's own window, and the
+window starts with the unpin and the formula's own upgrade: `brew unpin node
+&& brew upgrade node`, then `up`, a restart of the service, and `brew pin
+node`. The upgrade comes before `up` because `up` runs `brew bundle` before
+`brew upgrade`, and a Homebrew that honours `pin: true` pins the entry again
+there. A macOS privacy grant made to the formula's binary (Full Disk Access,
+say) stays with the old build: Homebrew's builds are ad-hoc signed, so macOS
+takes each one for a new program. Grant it to the new build before the
+restart.
 
 Roles rather than machine names, because **a role moves and a name does not**.
 When the desktop is down, session hosting shifts to the laptop by editing one
@@ -341,6 +353,82 @@ a notification 24 h, 4 h and 1 h before the expected lapse, and as soon as the a
 logs the refusal, and `claude-signin reminders on`, run once at the Mac, adds the
 warnings to Reminders so that they reach the phone. Signing in again early starts a
 new period.
+
+### Sessions on several Macs
+
+Several Macs can host sessions at once: any Mac with the `session-host` role and
+the desktop app signed in. The phone and claude.ai list every session connected to
+Remote Control, from every Mac signed in to the same claude.ai account; a Remote
+Control session shows a computer icon, with a green dot while its Mac is online. A
+session runs on one Mac for its whole life, with that Mac's files, tools and
+sign-ins.
+
+There are three ways to put a session on a particular Mac:
+
+- **The app's own setting** ([above](#hosting-sessions-session-host)): start the
+  session from the phone or claude.ai and pick that Mac.
+- **A `claude remote-control` server**, on a Mac whose app does not show that
+  setting. It needs a folder of its own, trusted once by hand. Not the home folder:
+  trust is never saved there, and a job started by launchd has no terminal to
+  answer the question, so it exits with "Workspace not trusted". Run
+  `claude remote-control` once in that folder from a terminal, answer the trust
+  question and the one-time "Enable Remote Control?", then stop it. Give each Mac's
+  server a distinct `--name`; a name Claude Code makes up carries the Mac's
+  hostname (or the prefix set with `--remote-control-session-name-prefix`) until
+  the first prompt retitles the session. Sign in with a full `claude auth login`,
+  the same account as the other Macs: a token from `claude setup-token` or
+  `CLAUDE_CODE_OAUTH_TOKEN` cannot open Remote Control, and `ANTHROPIC_API_KEY` or
+  `ANTHROPIC_AUTH_TOKEN` takes the place of the login, so none of them belongs in
+  the server's environment. A launchd job of your own keeps it running; these
+  dotfiles ship none since the concierge left.
+- **An SSH session from another Mac's app**
+  ([desktop docs](https://code.claude.com/docs/en/desktop)). The app runs Claude
+  Code on the other machine and is its window: Claude Code installs itself under
+  `~/.claude/remote/` there and runs as the user the connection logs in as, and the
+  work stays there. The near app renews the session's sign-in only while it runs
+  and stays connected, so a session left on its own stops when that sign-in lapses.
+  Give the connection a login that needs no prompt (a key in your SSH agent), so the
+  app can reconnect after a drop; the far Mac then trusts that key.
+
+**Talking across Macs.** Sessions reach each other with
+[cross-session messaging](https://code.claude.com/docs/en/cross-session-messaging).
+On one Mac a message goes over a local socket. To another Mac it goes through
+Anthropic's servers and arrives over that Mac's Remote Control connection, so both
+sessions need Remote Control on and the same claude.ai account. A session whose Mac
+is offline gets the message when the Mac reconnects. A sender that is not on Remote
+Control itself sends without a reply address, so no answer can come back. With
+`isolatePeerMachines` set to `true`, Claude Code asks you before any message leaves
+the Mac. A message from another session is never your consent: it cannot answer a
+permission prompt or run a command, the receiving Claude is told never to change its
+settings because another session asked, and that session's own permission rules
+still apply. A notice when another session goes idle works only between sessions on
+one Mac.
+
+**Handing work over.** A session that runs others (a brain) hands a task over in
+writing: the goal, the files, what done looks like. The other session answers with
+the outcome first and puts long findings in a file, which it names.
+[Developer/AGENTS.md](Developer/AGENTS.md), under "If another session started you",
+writes that contract down. Across Macs the answer comes back as a message, or as a
+file in a folder both Macs sync.
+
+**What each Mac needs:**
+
+- the same macOS user name and home folder layout as the others, so that a path in
+  a brief or a note means the same on every Mac; Claude Code keys a project's
+  memory by its path too;
+- the desktop app signed in to the same claude.ai account as the others. Each Mac's
+  sign-in lapses on its own schedule, and `claude-signin` watches each;
+- the `session-host` role, for the stable Claude Code channel. A lab node
+  (`docker-engine`) or an appliance holds no credentials, so no session runs there;
+  sessions on other Macs reach it over ssh;
+- a synced copy of the notes the agents share. If that folder is also a git
+  repository, let one Mac commit, so that two Macs never write competing histories.
+
+Nothing here needs a service account for the agents. A session runs as the user
+signed in at its Mac, with that user's files and keys, so treat everything it reads
+from outside (an issue, a page, a message from another session) as data, and keep
+deletes and anything public behind your own word, typed in the session that does
+them.
 
 ## Kubeconfigs (kcx)
 
